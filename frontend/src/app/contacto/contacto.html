@@ -1,0 +1,111 @@
+<div class="contacto-container">
+  <h1 class="page-title">Contacto</h1>
+
+  <div class="contacto-content">
+    <div class="form-card">
+      <h2 class="form-title">Envíanos tu consulta</h2>
+
+      <p class="subtitle">
+        Si tienes dudas sobre los pedidos, quieres proponer un nuevo punto de recogida o estás interesado
+        en colaborar como productor, rellena el formulario y nos pondremos en contacto contigo.
+      </p>
+
+      @if (successMessage) {
+        <div class="feedback-animated success">
+          {{ successMessage }}
+        </div>
+      }
+
+      @if (errorMessage) {
+        <div class="feedback-animated error">
+          {{ errorMessage }}
+        </div>
+      }
+
+      <form [formGroup]="contactoForm" (ngSubmit)="onSubmit()">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="nombre">Nombre</label>
+            <input
+              type="text"
+              id="nombre"
+              formControlName="nombre"
+              placeholder="Tu nombre"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              formControlName="email"
+              placeholder="tuemail@ejemplo.com"
+            >
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="motivo">Motivo</label>
+          <select id="motivo" formControlName="motivo">
+            <option value="Información general">Información general</option>
+            <option value="Soporte de pedidos">Soporte de pedidos</option>
+            <option value="Quiero ser productor">Quiero ser productor</option>
+          </select>
+        </div>
+
+        @if (contactoForm.get('motivo')?.value === 'Quiero ser productor') {
+          <div class="form-group">
+            <label for="certificado">Certificado ecológico</label>
+            <input
+              type="file"
+              id="certificado"
+              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+              (change)="onFileSelected($event)"
+            >
+
+            <small>
+              Sube un documento que acredite que eres productor de productos ecológicos.
+            </small>
+          </div>
+        }
+
+        <div class="form-group">
+          <label for="mensaje">Mensaje</label>
+          <textarea
+            id="mensaje"
+            formControlName="mensaje"
+            placeholder="Cuéntanos en qué podemos ayudarte..."
+            rows="5"
+          ></textarea>
+        </div>
+
+        <button
+          type="submit"
+          [disabled]="contactoForm.invalid || submitting"
+          class="btn-submit"
+        >
+          @if (submitting) {
+            Enviando...
+          } @else {
+            Enviar consulta
+          }
+        </button>
+      </form>
+    </div>
+
+    <div class="info-card">
+      <h3 class="info-title">Datos de contacto</h3>
+
+      <ul class="info-list">
+        <li><strong>Email:</strong> info&#64;eco-market.com</li>
+        <li><strong>Teléfono:</strong> +34 600 000 000</li>
+        <li><strong>Ubicación:</strong> España</li>
+      </ul>
+
+      <p class="info-text">
+        EcoMarket funciona principalmente como plataforma online. En la memoria del proyecto se pueden detallar los puntos físicos de recogida o las zonas de reparto disponibles.
+      </p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,44 @@
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+  <div style="background-color: #2e7d32; padding: 20px; text-align: center; color: white;">
+    <h1 style="margin: 0; font-size: 24px;">🌱 EcoMarket</h1>
+    <p style="margin: 5px 0 0;">Tu mercado ecológico de confianza</p>
+  </div>
+
+  <div style="padding: 20px; color: #333;">
+    <h2>¡Gracias por tu compra, {{ user.first_name|default:user.username }}!</h2>
+    <p>Hemos recibido el pago de tu pedido <strong>#{{ order.id }}</strong>. Aquí tienes el resumen:</p>
+
+    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+      <thead>
+      <tr style="background-color: #f1f8e9; text-align: left;">
+        <th style="padding: 10px; border-bottom: 2px solid #c5e1a5;">Producto</th>
+        <th style="padding: 10px; border-bottom: 2px solid #c5e1a5;">Cant.</th>
+        <th style="padding: 10px; border-bottom: 2px solid #c5e1a5;">Subtotal</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% for item in items %}
+      <tr>
+        <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ item.product_name }}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ item.quantity }}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ item.subtotal }} €</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+      <tfoot>
+      <tr>
+        <td colspan="2" style="padding: 10px; text-align: right; font-weight: bold;">Total Pagado:</td>
+        <td style="padding: 10px; font-weight: bold; color: #2e7d32;">{{ order.total }} €</td>
+      </tr>
+      </tfoot>
+    </table>
+
+    <p style="margin-top: 30px;">
+      {% if order.delivery_type == 'PICKUP' %}
+      Te avisaremos cuando tu pedido esté listo en el punto de recogida.
+      {% else %}
+      Lo enviaremos pronto a la dirección: {{ order.delivery_address }}.
+      {% endif %}
+    </p>
+  </div>
+</div>

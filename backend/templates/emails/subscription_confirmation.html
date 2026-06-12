@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Confirmación de Suscripción</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+        <h2 style="color: #2e7d32;">¡Suscripción Creada con Éxito!</h2>
+        
+        <p>Hola {{ user.first_name }},</p>
+        
+        <p>Tu nueva suscripción a la cesta de EcoMarket se ha registrado correctamente.</p>
+        
+        <div style="background-color: #f1f8e9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #33691e;">Detalles de tu Suscripción</h3>
+            <ul style="list-style-type: none; padding-left: 0;">
+                <li><strong>Tamaño de la Cesta:</strong> {{ subscription.get_size_display }}</li>
+                <li><strong>Frecuencia:</strong> {{ subscription.get_frequency_display }}</li>
+                <li><strong>Día de Entrega:</strong> {{ subscription.get_delivery_day_display }}</li>
+                <li><strong>Estado:</strong> {{ subscription.get_status_display }}</li>
+            </ul>
+        </div>
+        
+        <p>Puedes gestionar tus suscripciones (pausarlas o cancelarlas) directamente desde tu perfil en la web.</p>
+        
+        <p>¡Gracias por confiar en nuestros productores locales y apostar por un consumo más sostenible!</p>
+        
+        <p>Saludos,<br>El equipo de EcoMarket 🌱</p>
+    </div>
+</body>
+</html>

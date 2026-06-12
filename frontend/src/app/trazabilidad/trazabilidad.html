@@ -1,0 +1,35 @@
+<section class="trazabilidad-page">
+  @if (loading) {
+    <p class="loading">Cargando trazabilidad...</p>
+  }
+
+  @if (!loading && error) {
+    <p class="error">{{ error }}</p>
+  }
+
+  @if (!loading && producto) {
+    <div class="trazabilidad-card">
+      <h1>Trazabilidad del producto</h1>
+
+      <h2>{{ producto.nombre }}</h2>
+
+      <div class="info-box">
+        <p><strong>Productor:</strong> {{ producto.productor }}</p>
+        <p><strong>Origen:</strong> {{ producto.origen }}</p>
+        <p><strong>Finca de origen:</strong> {{ producto.finca_origen || 'No especificada' }}</p>
+        <p><strong>Lote:</strong> {{ producto.lote || 'No especificado' }}</p>
+        <p><strong>Fecha de cosecha:</strong> {{ producto.fecha_cosecha || 'No especificada' }}</p>
+      </div>
+
+      @if (producto.certificado) {
+        <a
+          [href]="producto.certificado"
+          target="_blank"
+          class="certificado-btn"
+        >
+          Ver certificado ecológico
+        </a>
+      }
+    </div>
+  }
+</section>

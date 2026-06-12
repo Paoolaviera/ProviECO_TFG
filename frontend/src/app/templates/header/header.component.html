@@ -1,0 +1,130 @@
+<header class="main-header">
+  <div class="header-container">
+
+    <button class="menu-toggle" aria-label="Abrir menú" id="menu-toggle-btn" (click)="toggleMenu()">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+
+    <a class="logo-section" routerLink="/">
+      <img class="logo-img" src="assets/images/logo.jpg" alt="EcoMarket" height="736" width="736" />
+      <div class="logo-text">
+        <h1>EcoMarket</h1>
+        <p>Sabor local, raíz ecológica</p>
+      </div>
+    </a>
+
+    <nav class="main-nav" id="main-nav" [class.active]="isMenuOpen">
+      <ul>
+        <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Inicio</a></li>
+        <li><a routerLink="/catalogo" routerLinkActive="active">Catálogo</a></li>
+        <li><a routerLink="/productores" routerLinkActive="active">Productores</a></li>
+        <li><a routerLink="/contacto" routerLinkActive="active">Contacto</a></li>
+
+        @if (authService.session$ | async; as session) {
+          <!-- Sección Admin: Se muestra si es ADMIN, staff o superuser -->
+          @if (session.rol === 'ADMIN' || session.is_staff || session.is_superuser) {
+            <li><a routerLink="/admin" routerLinkActive="active">Panel Administrador</a></li>
+          }
+          <!-- Sección Productor -->
+          @if (session.rol === 'PRODUCTOR') {
+            <li><a routerLink="/panel-productor" routerLinkActive="active">Panel Productor</a></li>
+          }
+        }
+
+        <li class="mobile-only-menu"><a routerLink="/login">Iniciar sesión</a></li>
+      </ul>
+    </nav>
+
+    <div class="user-actions">
+      @if (authService.session$ | async; as session) {
+        <a class="login-link" routerLink="/perfil" id="login-link">
+                    <span class="account-icon mobile-login-icon">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </span>
+          <span class="login-text">Mi Perfil</span>
+        </a>
+      } @else {
+        <a class="login-link" routerLink="/login" id="login-link">
+                    <span class="account-icon mobile-login-icon">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </span>
+          <span class="login-text">Iniciar sesión</span>
+        </a>
+      }
+
+      <a class="cart-link cart-icon-only" href="#" aria-label="Ir al carrito" (click)="toggleCartDrawer($event)">
+                <span class="cart-icon" [class.cart-bump]="bumpCart">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="9" cy="21" r="1"></circle>
+                        <circle cx="20" cy="21" r="1"></circle>
+                        <path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"></path>
+                    </svg>
+                </span>
+        <span class="cart-count">{{ cartCount }}</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<!-- Overlay y Panel Lateral del Carrito -->
+<div class="cart-overlay" [class.active]="isCartDrawerOpen" (click)="toggleCartDrawer()"></div>
+
+<div class="cart-drawer" [class.active]="isCartDrawerOpen">
+  <div class="cart-header">
+    <h2>Tu Carrito</h2>
+    <button class="close-cart-btn" (click)="toggleCartDrawer()">&times;</button>
+  </div>
+
+  <div class="cart-items">
+    @if (cartItems.length === 0) {
+      <div class="empty-cart">
+        <p>Tu carrito está vacío.</p>
+        <p>¡Descubre productos locales y ecológicos!</p>
+      </div>
+    } @else {
+      @for (item of cartItems; track item.producto.id) {
+        <div class="cart-item">
+          <img [src]="item.producto.imagenUrl" [alt]="item.producto.nombre" class="cart-item-img">
+          <div class="cart-item-details">
+            <h4 class="cart-item-title">{{ item.producto.nombre }}</h4>
+            <div class="cart-item-price">{{ item.producto.precio | number:'1.2-2' }} {{ item.producto.unidad }}</div>
+            <div class="cart-item-actions">
+              <div class="quantity-controls">
+                <button class="qty-btn" (click)="updateQuantity(item.producto.id, item.cantidad - 1)">-</button>
+                <span class="qty-value">{{ item.cantidad }}</span>
+                <button class="qty-btn" (click)="updateQuantity(item.producto.id, item.cantidad + 1)">+</button>
+              </div>
+              <button class="remove-btn" type="button" (click)="removeItem(item)">
+                <i class="fa-solid fa-trash-can"></i> Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    }
+  </div>
+
+  @if (cartItems.length > 0) {
+    <div class="cart-footer">
+      <div class="cart-total">
+        <span>Total:</span>
+        <span>{{ cartTotal | number:'1.2-2' }} €</span>
+      </div>
+      <button class="btn-checkout" (click)="irAConfirmarPedido()">
+        Finalizar Compra
+      </button>
+    </div>
+  }
+</div>

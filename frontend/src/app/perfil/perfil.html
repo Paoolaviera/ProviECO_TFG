@@ -1,0 +1,676 @@
+<main class="central-container">
+  <aside class="sidebar-panel">
+    <div class="sidebar-scroll-container">
+      @for (item of sidebarItems; track item) {
+        <button
+          class="sidebar-button"
+          type="button"
+          [class.sidebar-button-active]="item === activeSection"
+          (click)="handleSidebarAction(item)"
+        >
+          {{ item }}
+        </button>
+      }
+    </div>
+  </aside>
+
+  <section class="main-content">
+    @if (successMessage) {
+      <p class="feedback success fade-in">{{ successMessage }}</p>
+    }
+
+    @if (errorMessage) {
+      <p class="feedback error fade-in">{{ errorMessage }}</p>
+    }
+
+    @if (accessDenied) {
+      <div class="state-card">
+        <div class="profile-pic profile-pic-placeholder">
+          <span>?</span>
+        </div>
+        <h3>Sesion no disponible</h3>
+        <p>Inicia sesión para acceder a tu perfil.</p>
+      </div>
+    } @else if (loading) {
+      <div class="state-card">
+        <div class="profile-pic profile-pic-placeholder">
+          <span>{{ avatarInitials }}</span>
+        </div>
+        <h3>Cargando perfil...</h3>
+        <p>Estamos recuperando los datos del usuario desde la API local.</p>
+      </div>
+    } @else {
+
+      <!-- ═══════════ MI PERFIL ═══════════ -->
+      @if (activeSection === 'Mi Perfil') {
+        <div class="profile-pic profile-pic-placeholder">
+          <span>{{ avatarInitials }}</span>
+        </div>
+
+        <h3>{{ user.nombre }}</h3>
+        <h4>{{ roleLabel }}</h4>
+
+        <div class="profile-cards">
+          <article class="info-card">
+            <p class="info-label">Email</p>
+            <p class="info-value">{{ user.email }}</p>
+          </article>
+
+          <article class="info-card">
+            <p class="info-label">Telefono</p>
+            <p class="info-value">{{ displayPhone }}</p>
+          </article>
+
+          <article class="info-card">
+            <p class="info-label">Direccion principal</p>
+            <p class="info-value">{{ displayAddress }}</p>
+          </article>
+
+          <article class="info-card">
+            <p class="info-label">Provincia</p>
+            <p class="info-value">{{ user.provincia || 'No especificada' }}</p>
+          </article>
+        </div>
+
+        <div class="description-text">
+          <p>
+            Este espacio resume tus datos de cuenta y te permite actualizarlos sin depender
+            todavia de la navegacion global del proyecto.
+          </p>
+
+          @if (!editing) {
+            <div class="profile-actions">
+              <button class="btn btn-primary" type="button" (click)="beginEdit()">
+                Editar Perfil
+              </button>
+              <button class="btn btn-secondary" type="button" (click)="handleSidebarAction('Mis Pedidos')">
+                Ver Pedidos
+              </button>
+            </div>
+          }
+        </div>
+
+        @if (editing) {
+          <section class="edit-card slide-down">
+            <div class="edit-head">
+              <div>
+                <h5>Editar perfil</h5>
+                <p>Actualiza tus datos personales y guardalos en la API local.</p>
+              </div>
+            </div>
+
+            <form class="profile-form" [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+              <label class="field">
+                <span>Nombre</span>
+                <input type="text" formControlName="nombre" placeholder="Nombre y apellidos" />
+                @if (profileForm.controls.nombre.invalid && profileForm.controls.nombre.touched) {
+                  <small>El nombre es obligatorio.</small>
+                }
+              </label>
+
+              <label class="field">
+                <span>Email</span>
+                <input type="email" formControlName="email" placeholder="correo@ejemplo.com" />
+                @if (profileForm.controls.email.invalid && profileForm.controls.email.touched) {
+                  <small>Introduce un email valido.</small>
+                }
+              </label>
+
+              <label class="field">
+                <span>Telefono</span>
+                <input type="text" formControlName="telefono" placeholder="+34 600000000" />
+              </label>
+
+              <label class="field">
+                <span>Direccion</span>
+                <input type="text" formControlName="direccion" placeholder="Calle, numero, puerta" />
+              </label>
+
+              <label class="field">
+                <span>Provincia</span>
+                <select formControlName="provincia">
+                  <option value="">Selecciona una provincia</option>
+                  @for (prov of provincias; track prov) {
+                    <option [value]="prov">{{ prov }}</option>
+                  }
+                </select>
+              </label>
+
+              <div class="form-actions">
+                <button class="btn btn-primary" type="submit" [disabled]="saving">
+                  {{ saving ? 'Guardando...' : 'Guardar Cambios' }}
+                </button>
+                <button class="btn btn-secondary" type="button" (click)="cancelEdit()">
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </section>
+        }
+
+      <!-- ═══════════ MIS PEDIDOS ═══════════ -->
+      } @else if (activeSection === 'Mis Pedidos') {
+        <div class="orders-section">
+          <h3>{{ user.rol === 'productor' ? 'Mis Ventas' : 'Mis Pedidos' }}</h3>
+          <p class="orders-subtitle">
+            {{ user.rol === 'productor' ? 'Aquí puedes ver los productos que has vendido a los clientes.' : 'Consulta el estado y los detalles de todas tus compras.' }}
+          </p>
+
+          @if (loadingOrders) {
+            <p>Cargando información...</p>
+          } @else if (user.rol === 'productor' && sales.length === 0) {
+            <div class="state-card">
+              <p>Aún no tienes ventas registradas.</p>
+            </div>
+          } @else if (user.rol === 'cliente' && orders.length === 0) {
+            <div class="state-card">
+              <p>No tienes ningún pedido todavía.</p>
+            </div>
+          } @else {
+            <div class="orders-list">
+              @if (user.rol === 'productor') {
+                @for (sale of sales; track sale.id) {
+                  <article class="order-card" [class.expanded]="expandedItemId === sale.id">
+                    <div class="order-header" (click)="toggleExpandedItem(sale.id)" style="cursor: pointer;">
+                      <div>
+                        <strong>Pedido #{{ sale.order_id }}</strong>
+                        <span class="order-date">{{ sale.order_date | date:'dd/MM/yyyy HH:mm' }}</span>
+                      </div>
+                      <div>
+                        <span class="status-badge" [class]="'status-' + sale.order_status.toLowerCase()">
+                          {{ translateStatus(sale.order_status) }}
+                        </span>
+                        <span class="expand-icon" style="margin-left: 12px; color: var(--primary-green);">
+                          {{ expandedItemId === sale.id ? '▲' : '▼' }}
+                        </span>
+                      </div>
+                    </div>
+                    @if (expandedItemId === sale.id) {
+                      <div class="order-body">
+                        <div class="order-customer-info">
+                          <p><strong>Comprador:</strong> {{ sale.buyer_name }} ({{ sale.buyer_email }})</p>
+                          <p><strong>Dirección:</strong> {{ sale.delivery_address }}</p>
+                        </div>
+                        <table class="order-items-table">
+                          <thead>
+                            <tr>
+                              <th>Producto</th>
+                              <th>Cantidad</th>
+                              <th>Precio Und.</th>
+                              <th>Certificado</th>
+                              <th>Subtotal</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td>{{ sale.product_name }}</td>
+                              <td>{{ sale.quantity }}</td>
+                              <td>{{ sale.unit_price }} €</td>
+                              <td>
+                                @if (sale.certificate_url) {
+                                  <a [href]="sale.certificate_url" target="_blank" class="cert-link">Ver PDF</a>
+                                } @else {
+                                  <span class="muted" style="color: #888;">N/A</span>
+                                }
+                              </td>
+                              <td><strong>{{ sale.subtotal }} €</strong></td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    }
+                  </article>
+                }
+              } @else {
+                @for (order of orders; track order.id) {
+                  <article class="order-card" [class.expanded]="expandedItemId === order.id">
+                    <div class="order-header" (click)="toggleExpandedItem(order.id)" style="cursor: pointer;">
+                      <div>
+                        <strong>Pedido #{{ order.id }}</strong>
+                        <span class="order-date">{{ order.created_at | date:'dd/MM/yyyy HH:mm' }}</span>
+                        <span class="order-delivery-type">{{ order.delivery_type === 'ADDRESS' ? 'A Domicilio' : 'Punto de Recogida' }}</span>
+                      </div>
+                      <div>
+                        <span class="status-badge" [class]="'status-' + order.status.toLowerCase()">
+                          {{ translateStatus(order.status) }}
+                        </span>
+                        <span class="expand-icon" style="margin-left: 12px; color: var(--primary-green);">
+                          {{ expandedItemId === order.id ? '▲' : '▼' }}
+                        </span>
+                      </div>
+                    </div>
+                    @if (expandedItemId === order.id) {
+                      <div class="order-body">
+                        <div class="order-customer-info">
+                          <p><strong>Dirección de envío:</strong> {{ order.delivery_address }}</p>
+                        </div>
+                        <table class="order-items-table">
+                          <thead>
+                            <tr>
+                              <th>Producto</th>
+                              <th>Cantidad</th>
+                              <th>Certificado</th>
+                              <th>Subtotal</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (item of order.items; track item.id) {
+                              <tr>
+                                <td>{{ item.product_name }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>
+                                  @if (item.certificate_url) {
+                                    <a [href]="item.certificate_url" target="_blank" class="cert-link">Ver PDF</a>
+                                  } @else {
+                                    <span class="muted" style="color: #888;">N/A</span>
+                                  }
+                                </td>
+                                <td>{{ item.subtotal }} €</td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                      <div class="order-footer">
+                        <strong>Total del pedido: {{ order.total }} €</strong>
+                      </div>
+                    }
+                  </article>
+                }
+              }
+            </div>
+          }
+        </div>
+
+      <!-- ═══════════ MIS SUSCRIPCIONES ═══════════ -->
+      } @else if (activeSection === 'Mis Suscripciones') {
+        <div class="orders-section">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h3>Mis Suscripciones a Cestas</h3>
+              <p class="orders-subtitle">Gestiona tus suscripciones recurrentes de cestas de productos.</p>
+            </div>
+            <button class="btn btn-primary" (click)="showNewSubscriptionForm = !showNewSubscriptionForm">
+              {{ showNewSubscriptionForm ? 'Cancelar' : 'Nueva Suscripción' }}
+            </button>
+          </div>
+
+          @if (showNewSubscriptionForm) {
+            <section class="edit-card" style="margin-top: 20px;">
+              <div class="edit-head">
+                <div>
+                  <h5>Crear Suscripción</h5>
+                  <p>Configura el tamaño y la frecuencia de tu cesta recurrente.</p>
+                </div>
+              </div>
+              <form class="profile-form" [formGroup]="subscriptionForm" (ngSubmit)="submitSubscription()">
+                <label class="field">
+                  <span>Tamaño de la Cesta</span>
+                  <select formControlName="size">
+                    <option value="SMALL">Pequeña</option>
+                    <option value="MEDIUM">Mediana</option>
+                    <option value="LARGE">Grande</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Frecuencia de Envío</span>
+                  <select formControlName="frequency">
+                    <option value="WEEKLY">Semanal</option>
+                    <option value="BIWEEKLY">Quincenal</option>
+                    <option value="MONTHLY">Mensual</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Día de Entrega</span>
+                  <select formControlName="delivery_day">
+                    <option value="MONDAY">Lunes</option>
+                    <option value="TUESDAY">Martes</option>
+                    <option value="WEDNESDAY">Miércoles</option>
+                    <option value="THURSDAY">Jueves</option>
+                    <option value="FRIDAY">Viernes</option>
+                    <option value="SATURDAY">Sábado</option>
+                    <option value="SUNDAY">Domingo</option>
+                  </select>
+                </label>
+                <div class="form-actions">
+                  <button class="btn btn-primary" type="submit" [disabled]="creatingSubscription">
+                    {{ creatingSubscription ? 'Creando...' : 'Confirmar Suscripción' }}
+                  </button>
+                </div>
+                <p style="margin-top: 15px; font-size: 0.9em; color: #666;">
+                  <em>Nota: Al confirmar, se creará una suscripción con los productos que tienes actualmente en tu carrito. Si tu carrito está vacío, no se podrá crear la suscripción.</em>
+                </p>
+              </form>
+            </section>
+          }
+
+          @if (loadingSubscriptions) {
+            <p>Cargando suscripciones...</p>
+          } @else if (subscriptions.length === 0) {
+            <div class="state-card" style="margin-top: 20px;">
+              <p>No tienes ninguna suscripción activa.</p>
+            </div>
+          } @else {
+            <div class="orders-list" style="margin-top: 20px;">
+              @for (sub of subscriptions; track sub.id) {
+                <article class="order-card" [class.expanded]="expandedItemId === 'sub_' + sub.id">
+                  <div class="order-header" (click)="toggleExpandedItem('sub_' + sub.id)" style="cursor: pointer;">
+                    <div>
+                      <strong>Suscripción Cesta {{ sub.size_display }}</strong>
+                      <span class="order-date">Creada: {{ sub.created_at | date:'dd/MM/yyyy' }}</span>
+                      <span class="order-delivery-type">{{ sub.frequency_display }} - Entregas los {{ sub.delivery_day_display || 'Lunes' }}</span>
+                    </div>
+                    <div>
+                      <span class="status-badge" 
+                            [class.status-paid]="sub.status === 'ACTIVE'" 
+                            [class.status-failed]="sub.status === 'CANCELLED'" 
+                            [class.status-pending_payment]="sub.status === 'PAUSED'">
+                        {{ sub.status_display }}
+                      </span>
+                      <span class="expand-icon" style="margin-left: 12px; color: var(--primary-green);">
+                        {{ expandedItemId === 'sub_' + sub.id ? '▲' : '▼' }}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  @if (expandedItemId === 'sub_' + sub.id) {
+                    <div class="order-body" style="padding: 15px;">
+                      <table class="order-items-table">
+                        <thead>
+                          <tr>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (item of sub.items; track item.id) {
+                            <tr>
+                              <td>{{ item.product_name }}</td>
+                              <td>{{ item.quantity }}</td>
+                            </tr>
+                          }
+                          @if (!sub.items || sub.items.length === 0) {
+                            <tr>
+                              <td colspan="2" style="text-align: center; color: #888;">Sin productos registrados.</td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                      
+                      <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        @if (sub.status === 'ACTIVE') {
+                          <button class="btn btn-secondary" (click)="updateSubscriptionStatus(sub.id, 'PAUSED')">Pausar</button>
+                          <button class="btn btn-secondary" style="color: #d32f2f; border-color: #d32f2f;" (click)="updateSubscriptionStatus(sub.id, 'CANCELLED')">Cancelar</button>
+                        } @else if (sub.status === 'PAUSED') {
+                          <button class="btn btn-primary" (click)="updateSubscriptionStatus(sub.id, 'ACTIVE')">Reactivar</button>
+                          <button class="btn btn-secondary" style="color: #d32f2f; border-color: #d32f2f;" (click)="updateSubscriptionStatus(sub.id, 'CANCELLED')">Cancelar</button>
+                        }
+                      </div>
+                    </div>
+                  }
+                </article>
+              }
+            </div>
+          }
+        </div>
+
+      <!-- ═══════════ DIRECCIONES ═══════════ -->
+      } @else if (activeSection === 'Direcciones') {
+        <div class="addresses-section fade-in">
+          <div class="section-header">
+            <div>
+              <h3>Mis Direcciones</h3>
+              <p class="section-subtitle">Gestiona tus direcciones de entrega y recogida.</p>
+            </div>
+            <button class="btn btn-primary" type="button" (click)="openAddressForm()">
+              + Añadir dirección
+            </button>
+          </div>
+
+          @if (showAddressForm) {
+            <div class="address-form-card slide-down">
+              <h5>{{ editingAddressId ? 'Editar dirección' : 'Nueva dirección' }}</h5>
+              <form class="address-form" [formGroup]="addressForm" (ngSubmit)="saveAddress()">
+                <label class="field">
+                  <span>Etiqueta</span>
+                  <input type="text" formControlName="label" placeholder="Ej: Casa, Trabajo..." />
+                  @if (addressForm.controls.label.invalid && addressForm.controls.label.touched) {
+                    <small>La etiqueta es obligatoria.</small>
+                  }
+                </label>
+
+                <label class="field">
+                  <span>Dirección</span>
+                  <input type="text" formControlName="address_line" placeholder="Calle, número, puerta" />
+                  @if (addressForm.controls.address_line.invalid && addressForm.controls.address_line.touched) {
+                    <small>La dirección es obligatoria.</small>
+                  }
+                </label>
+
+                <label class="field">
+                  <span>Ciudad</span>
+                  <input type="text" formControlName="city" placeholder="Ciudad" />
+                  @if (addressForm.controls.city.invalid && addressForm.controls.city.touched) {
+                    <small>La ciudad es obligatoria.</small>
+                  }
+                </label>
+
+                <label class="field">
+                  <span>Provincia</span>
+                  <select formControlName="provincia">
+                    <option value="">Selecciona una provincia</option>
+                    @for (prov of provincias; track prov) {
+                      <option [value]="prov">{{ prov }}</option>
+                    }
+                  </select>
+                </label>
+
+                <label class="field">
+                  <span>Código Postal</span>
+                  <input type="text" formControlName="postal_code" placeholder="28001" />
+                  @if (addressForm.controls.postal_code.invalid && addressForm.controls.postal_code.touched) {
+                    <small>El código postal es obligatorio.</small>
+                  }
+                </label>
+
+                <label class="field">
+                  <span>Tipo</span>
+                  <select formControlName="address_type">
+                    <option value="ENTREGA">Entrega</option>
+                    <option value="RECOGIDA">Recogida</option>
+                  </select>
+                </label>
+
+                <label class="field checkbox-field">
+                  <input type="checkbox" formControlName="is_default" />
+                  <span>Dirección predeterminada</span>
+                </label>
+
+                <div class="form-actions">
+                  <button class="btn btn-primary" type="submit">
+                    {{ editingAddressId ? 'Actualizar' : 'Guardar' }}
+                  </button>
+                  <button class="btn btn-secondary" type="button" (click)="cancelAddressForm()">
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </div>
+          }
+
+          @if (loadingAddresses) {
+            <p class="loading-text">Cargando direcciones...</p>
+          } @else if (addresses.length === 0 && !showAddressForm) {
+            <div class="state-card">
+              <p>No tienes direcciones guardadas todavía.</p>
+              <p>Añade tu primera dirección para agilizar tus pedidos.</p>
+            </div>
+          } @else {
+            <div class="address-grid">
+              @for (addr of addresses; track addr.id) {
+                <article class="address-card fade-in-up" [class.removing]="deletingAddressId === addr.id">
+                  @if (addr.is_default) {
+                    <span class="default-badge">★ Predeterminada</span>
+                  }
+                  <h5 class="address-label">{{ addr.label }}</h5>
+                  <p class="address-line">{{ addr.address_line }}</p>
+                  <p class="address-detail">{{ addr.city }}, {{ addr.provincia }} — {{ addr.postal_code }}</p>
+                  <span class="address-type-badge" [class.type-recogida]="addr.address_type === 'RECOGIDA'">
+                    {{ addr.address_type === 'ENTREGA' ? '📦 Entrega' : '🏪 Recogida' }}
+                  </span>
+                  <div class="address-actions">
+                    @if (!addr.is_default) {
+                      <button class="btn-icon" type="button" title="Hacer predeterminada" (click)="setDefaultAddress(addr.id!)">★</button>
+                    }
+                    <button class="btn-icon" type="button" title="Editar" (click)="editAddress(addr)">✏️</button>
+                    <button class="btn-icon btn-icon-danger" type="button" title="Eliminar" (click)="deleteAddress(addr.id!)">🗑️</button>
+                  </div>
+                </article>
+              }
+            </div>
+          }
+        </div>
+
+      <!-- ═══════════ AJUSTES ═══════════ -->
+      } @else if (activeSection === 'Ajustes') {
+        <div class="settings-section fade-in">
+          <h3>Ajustes de cuenta</h3>
+          <p class="section-subtitle">Modifica tus datos personales, contraseña y preferencias de accesibilidad.</p>
+
+          <!-- Datos de cuenta -->
+          <div class="settings-card slide-down">
+            <div class="settings-card-header">
+              <h5>👤 Datos de cuenta</h5>
+              <p>Actualiza tu nombre y email.</p>
+            </div>
+            <form class="settings-form" [formGroup]="accountForm" (ngSubmit)="saveAccountData()">
+              <label class="field">
+                <span>Nombre completo</span>
+                <input type="text" formControlName="nombre" placeholder="Nombre y apellidos" />
+                @if (accountForm.controls.nombre.invalid && accountForm.controls.nombre.touched) {
+                  <small>El nombre es obligatorio.</small>
+                }
+              </label>
+              <label class="field">
+                <span>Email</span>
+                <input type="email" formControlName="email" placeholder="correo@ejemplo.com" />
+                @if (accountForm.controls.email.invalid && accountForm.controls.email.touched) {
+                  <small>Introduce un email válido.</small>
+                }
+              </label>
+              <div class="form-actions">
+                <button class="btn btn-primary" type="submit" [disabled]="savingAccountData">
+                  {{ savingAccountData ? 'Guardando...' : 'Guardar cambios' }}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Cambiar contraseña -->
+          <div class="settings-card slide-down">
+            <div class="settings-card-header">
+              <h5>🔒 Cambiar contraseña</h5>
+              <p>Introduce tu nueva contraseña (mínimo 6 caracteres).</p>
+            </div>
+
+            @if (passwordSuccess) {
+              <p class="feedback success fade-in">{{ passwordSuccess }}</p>
+            }
+            @if (passwordError) {
+              <p class="feedback error fade-in">{{ passwordError }}</p>
+            }
+
+            <form class="settings-form" [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+              <label class="field">
+                <span>Nueva contraseña</span>
+                <input type="password" formControlName="new_password" placeholder="••••••••" />
+                @if (passwordForm.controls.new_password.invalid && passwordForm.controls.new_password.touched) {
+                  <small>Mínimo 6 caracteres.</small>
+                }
+              </label>
+              <label class="field">
+                <span>Confirmar contraseña</span>
+                <input type="password" formControlName="confirm_password" placeholder="••••••••" />
+              </label>
+              <div class="form-actions">
+                <button class="btn btn-primary" type="submit" [disabled]="savingPassword">
+                  {{ savingPassword ? 'Cambiando...' : 'Cambiar contraseña' }}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Preferencias de accesibilidad -->
+          <div class="settings-card slide-down">
+            <div class="settings-card-header">
+              <h5>🎨 Preferencias y accesibilidad</h5>
+              <p>Los cambios se guardan automáticamente y persisten en tu cuenta.</p>
+              @if (preferenceSaved) {
+                <span class="saved-indicator fade-in">✓ Guardado</span>
+              }
+            </div>
+
+            <div class="preference-row">
+              <div class="preference-info">
+                <span class="preference-label">Modo oscuro</span>
+                <span class="preference-desc">Cambia el tema visual de toda la aplicación.</span>
+              </div>
+              <button
+                class="toggle-switch"
+                type="button"
+                [class.active]="preferences.theme === 'dark'"
+                (click)="toggleTheme()"
+                [disabled]="savingPreference"
+              >
+                <span class="toggle-knob"></span>
+              </button>
+            </div>
+
+            <div class="preference-row">
+              <div class="preference-info">
+                <span class="preference-label">Tamaño de fuente</span>
+                <span class="preference-desc">Ajusta el tamaño del texto en la aplicación.</span>
+              </div>
+              <div class="font-size-selector">
+                <button
+                  class="font-btn"
+                  [class.active]="preferences.font_size === 'normal'"
+                  (click)="setFontSize('normal')"
+                  [disabled]="savingPreference"
+                >A</button>
+                <button
+                  class="font-btn font-btn-lg"
+                  [class.active]="preferences.font_size === 'large'"
+                  (click)="setFontSize('large')"
+                  [disabled]="savingPreference"
+                >A</button>
+                <button
+                  class="font-btn font-btn-xl"
+                  [class.active]="preferences.font_size === 'x-large'"
+                  (click)="setFontSize('x-large')"
+                  [disabled]="savingPreference"
+                >A</button>
+              </div>
+            </div>
+
+            <div class="preference-row">
+              <div class="preference-info">
+                <span class="preference-label">Notificaciones</span>
+                <span class="preference-desc">Recibe avisos sobre tus pedidos y novedades.</span>
+              </div>
+              <button
+                class="toggle-switch"
+                type="button"
+                [class.active]="preferences.notifications_enabled"
+                (click)="toggleNotifications()"
+                [disabled]="savingPreference"
+              >
+                <span class="toggle-knob"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    }
+  </section>
+</main>

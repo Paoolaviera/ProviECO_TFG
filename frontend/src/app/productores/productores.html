@@ -1,0 +1,69 @@
+<main class="content-wrapper">
+  <section class="hero-section">
+    <div class="hero-copy">
+      <p class="eyebrow">EcoMarket para productores</p>
+      <h1>Colabora con EcoMarket</h1>
+      <p class="hero-text">
+        EcoMarket conecta productores ecologicos con consumidores de toda Espana.
+        Si tienes una finca, cooperativa o pequeno obrador, te ayudamos a vender con
+        transparencia, precios justos y logistica organizada por zonas.
+      </p>
+    </div>
+
+    <div class="hero-badge">
+      <span>Marketplace local</span>
+      <strong>Venta directa con acompanamiento</strong>
+    </div>
+  </section>
+
+  <section class="grey-container" aria-label="Ventajas para productores">
+    @for (feature of features; track feature.title) {
+      <article class="card">
+        <h2>{{ feature.title }}</h2>
+        @for (point of feature.points; track point) {
+          <p>{{ point }}</p>
+        }
+      </article>
+    }
+  </section>
+
+  <section class="text-section" id="como-funciona">
+    <p class="eyebrow">Proceso de alta</p>
+    <h2>Como unirte como productor</h2>
+    <p>
+      Para mantener la calidad del marketplace, el alta es manual. Te pedimos informacion
+      basica, certificacion ecologica si la tienes o descripcion de practicas sostenibles,
+      y un primer listado de productos.
+    </p>
+
+    <div class="process-grid">
+      <article class="process-step">
+        <span>1</span>
+        <h3>Nos contactas</h3>
+        <p>Cuéntanos quién eres, qué produces y en qué zona trabajas.</p>
+      </article>
+
+      <article class="process-step">
+        <span>2</span>
+        <h3>Validamos datos</h3>
+        <p>Revisamos la informacion y resolvemos contigo cualquier duda inicial.</p>
+      </article>
+
+      <article class="process-step">
+        <span>3</span>
+        <h3>Activamos tu panel</h3>
+        <p>Te damos acceso para gestionar productos y mantener tu catalogo al dia.</p>
+      </article>
+    </div>
+
+    <div class="producer-actions">
+      <a class="btn btn-primary" routerLink="/contacto">Contactar para alta</a>
+      <a class="btn btn-secondary" routerLink="/catalogo">Ver catalogo</a>
+    </div>
+
+    <p class="integration-note">
+      Los enlaces se dejan neutros para no interferir con el trabajo de rutas y navegacion del resto del equipo.
+    </p>
+  </section>
+</main>
+

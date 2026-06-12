@@ -1,0 +1,14 @@
+.idea/
+node_modules/
+.DS_Store
+.env
+# Python
+.venv/
+.venv-*/
+.codex-pydeps/
+venv/
+env/
+*.sqlite3
+__pycache__/
+*.py[cod]
+

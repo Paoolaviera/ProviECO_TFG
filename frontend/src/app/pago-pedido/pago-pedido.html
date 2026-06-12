@@ -1,0 +1,85 @@
+<section class="payment-page">
+  <div class="payment-card">
+    <h1>Pago del pedido</h1>
+
+    <p class="subtitle">
+      Introduce los datos de pago para finalizar la compra.
+    </p>
+
+    <div class="simulation-box">
+      <strong>Modo simulación:</strong>
+      <p>
+        El pago es simulado. No se realiza ningún cargo real.
+      </p>
+    </div>
+
+    <div *ngIf="errorMessage" class="alert alert-error">
+      {{ errorMessage }}
+    </div>
+
+    <div *ngIf="successMessage" class="alert alert-success">
+      {{ successMessage }}
+    </div>
+
+    <form (ngSubmit)="pay()" novalidate>
+      <label>
+        Nombre del titular
+        <input
+          type="text"
+          name="cardHolder"
+          [(ngModel)]="cardHolder"
+          placeholder="Ej: Federico García"
+          autocomplete="cc-name"
+        />
+      </label>
+
+      <label>
+        Número de tarjeta
+        <input
+          type="text"
+          name="cardNumber"
+          [(ngModel)]="cardNumber"
+          (input)="formatCardNumber()"
+          placeholder="4242 4242 4242 4242"
+          maxlength="19"
+          autocomplete="cc-number"
+        />
+        <small>Debe tener 16 dígitos.</small>
+      </label>
+
+      <div class="row">
+        <label>
+          Caducidad
+          <input
+            type="text"
+            name="expiry"
+            [(ngModel)]="expiry"
+            (input)="formatExpiry()"
+            placeholder="MM/AA"
+            maxlength="5"
+            autocomplete="cc-exp"
+          />
+          <small>Formato: MM/AA</small>
+        </label>
+
+        <label>
+          CVV
+          <input
+            type="password"
+            name="cvv"
+            [(ngModel)]="cvv"
+            (input)="formatCvv()"
+            placeholder="123"
+            maxlength="3"
+            autocomplete="cc-csc"
+          />
+          <small>3 dígitos.</small>
+        </label>
+      </div>
+
+      <button type="submit" [disabled]="loading || !!successMessage">
+        {{ loading ? 'Procesando pago...' : 'Pagar pedido' }}
+      </button>
+    </form>
+  </div>
+</section>

@@ -1,0 +1,64 @@
+.trazabilidad-page {
+  min-height: 100vh;
+  padding: 40px 20px;
+  background: #f4faf4;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.trazabilidad-card {
+  width: 100%;
+  max-width: 650px;
+  background: white;
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.trazabilidad-card h1 {
+  color: #2b7f3b;
+  margin-bottom: 12px;
+}
+
+.trazabilidad-card h2 {
+  color: #1f5f2b;
+  margin-bottom: 24px;
+}
+
+.info-box {
+  background: #f7fbf7;
+  border: 1px solid #d8ead8;
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.info-box p {
+  margin: 10px 0;
+  color: #444;
+}
+
+.certificado-btn {
+  display: inline-block;
+  margin-top: 24px;
+  padding: 12px 18px;
+  background: #2b7f3b;
+  color: white;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.certificado-btn:hover {
+  background: #1f5f2b;
+}
+
+.loading,
+.error {
+  font-size: 18px;
+  text-align: center;
+}
+
+.error {
+  color: #c62828;
+}

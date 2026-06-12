@@ -1,0 +1,97 @@
+<main class="auth-page">
+    <section class="auth-card">
+        <header class="auth-header">
+            <h1>Crear cuenta</h1>
+            <p>Registrate en EcoMarket y empieza a comprar productos ecologicos.</p>
+        </header>
+
+        <form class="auth-form" [formGroup]="registerForm" (ngSubmit)="onSubmit()" autocomplete="on">
+            <div class="grid-2">
+                <div class="field">
+                    <label for="name">Nombre</label>
+                    <div class="input-wrap" [class.invalid-wrap]="isInvalid('first_name')">
+                        <i class="fa-regular fa-user"></i>
+                        <input id="name" formControlName="first_name" type="text" required />
+                    </div>
+                    <p *ngIf="isInvalid('first_name')" class="field-error">El nombre es obligatorio.</p>
+                </div>
+
+                <div class="field">
+                    <label for="surname">Apellidos</label>
+                    <div class="input-wrap" [class.invalid-wrap]="isInvalid('last_name')">
+                        <i class="fa-regular fa-id-card"></i>
+                        <input id="surname" formControlName="last_name" type="text" required />
+                    </div>
+                    <p *ngIf="isInvalid('last_name')" class="field-error">Los apellidos son obligatorios.</p>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="email">Email</label>
+                <div class="input-wrap" [class.invalid-wrap]="isInvalid('email')">
+                    <i class="fa-regular fa-envelope"></i>
+                    <input id="email" formControlName="email" type="email" inputmode="email" placeholder="tuemail@ejemplo.com" required />
+                </div>
+                <p *ngIf="isInvalid('email')" class="field-error">Introduce un email valido.</p>
+            </div>
+
+            <div class="grid-2">
+                <div class="field">
+                    <label for="password">Contraseña</label>
+                    <div class="input-wrap" [class.invalid-wrap]="isInvalid('password')">
+                        <i class="fa-solid fa-lock"></i>
+                        <input id="password" formControlName="password" [type]="passwordVisible ? 'text' : 'password'" placeholder="Minimo 6 caracteres" required minlength="6" />
+                        <button class="icon-btn" type="button" aria-label="Mostrar u ocultar contrasena" (click)="togglePassword()">
+                            <i class="fa-regular" [ngClass]="passwordVisible ? 'fa-eye-slash' : 'fa-eye'"></i>
+                        </button>
+                    </div>
+                    <p *ngIf="isInvalid('password')" class="field-error">La contrasena debe tener al menos 6 caracteres.</p>
+                    <small *ngIf="!isInvalid('password')" class="hint">Usa al menos 6 caracteres, mejor si combinas letras y numeros.</small>
+                </div>
+
+                <div class="field">
+                    <label for="password2">Repite la contraseña</label>
+                    <div class="input-wrap" [class.invalid-wrap]="isInvalid('passwordConfirm')">
+                        <i class="fa-solid fa-lock"></i>
+                        <input id="password2" formControlName="passwordConfirm" [type]="passwordConfirmVisible ? 'text' : 'password'" placeholder="Repite tu contraseña" required minlength="6" />
+                        <button class="icon-btn" type="button" aria-label="Mostrar u ocultar confirmación de contraseña" (click)="togglePasswordConfirm()">
+                            <i class="fa-regular" [ngClass]="passwordConfirmVisible ? 'fa-eye-slash' : 'fa-eye'"></i>
+                        </button>
+                    </div>
+                    <p *ngIf="isInvalid('passwordConfirm')" class="field-error">Las contraseñas deben coincidir.</p>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="provincia">Provincia</label>
+                <div class="input-wrap" [class.invalid-wrap]="isInvalid('provincia')">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <select id="provincia" formControlName="provincia" required>
+                        <option value="" disabled>Selecciona tu provincia</option>
+                        <option *ngFor="let p of provincias" [value]="p">{{ p }}</option>
+                    </select>
+                </div>
+                <p *ngIf="isInvalid('provincia')" class="field-error">Selecciona tu provincia.</p>
+            </div>
+
+            <label class="checkbox checkbox-terms">
+                <input type="checkbox" formControlName="terms" required />
+                <span>Acepto los <a class="auth-link" href="#">Terminos</a> y la <a class="auth-link" href="#">Politica de privacidad</a>.</span>
+            </label>
+            <p *ngIf="isInvalid('terms')" class="field-error">Debes aceptar los terminos para crear la cuenta.</p>
+
+            <div *ngIf="errorMessage" class="form-alert" role="alert">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span>{{ errorMessage }}</span>
+            </div>
+
+            <button class="btn btn-primary btn-block" type="submit" [disabled]="submitting">
+                {{ submitting ? 'Creando cuenta...' : 'Crear cuenta' }}
+            </button>
+
+            <p class="auth-footer-text">
+                Ya tienes cuenta? <a class="auth-link" routerLink="/login">Inicia sesion</a>
+            </p>
+        </form>
+    </section>
+</main>

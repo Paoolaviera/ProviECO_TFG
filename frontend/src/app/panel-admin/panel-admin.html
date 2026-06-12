@@ -1,0 +1,302 @@
+<main class="admin-page">
+  <section class="admin-shell">
+    <header class="admin-head">
+      <div>
+        <p class="eyebrow">EcoMarket</p>
+        <h1>Panel Administrador</h1>
+        <p class="lead">Gestiona usuarios, productos y verificaciones desde la aplicacion.</p>
+      </div>
+      <div class="summary-strip">
+        <article>
+          <span>Usuarios activos</span>
+          <strong>{{ activeUsersCount }}</strong>
+        </article>
+        <article>
+          <span>Productos</span>
+          <strong>{{ products.length }}</strong>
+        </article>
+        <article>
+          <span>Pendientes</span>
+          <strong>{{ pendingProductsCount }}</strong>
+        </article>
+      </div>
+    </header>
+
+    @if (successMessage) {
+      <p class="feedback success">{{ successMessage }}</p>
+    }
+
+    @if (errorMessage) {
+      <p class="feedback error">{{ errorMessage }}</p>
+    }
+
+    <nav class="admin-tabs" aria-label="Secciones de administracion">
+      @for (tab of tabs; track tab.id) {
+        <button
+          type="button"
+          [class.active]="activeTab === tab.id"
+          (click)="setTab(tab.id)"
+        >
+          {{ tab.label }}
+        </button>
+      }
+    </nav>
+
+    @if (loading) {
+      <section class="admin-card state-card">
+        <h2>Cargando panel...</h2>
+        <p>Estamos recuperando los datos de administracion.</p>
+      </section>
+    } @else {
+      @if (activeTab === 'usuarios') {
+        <section class="admin-card">
+          <div class="card-head">
+            <div>
+              <h2>Usuarios registrados</h2>
+              <p>Activa, desactiva o elimina cuentas desde una vista centralizada.</p>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Usuario</th>
+                  <th>Rol</th>
+                  <th>Estado</th>
+                  <th>Alta</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (user of users; track user.id) {
+                  <tr>
+                    <td>
+                      <strong>{{ user.full_name }}</strong>
+                      <span>{{ user.email }}</span>
+                    </td>
+                    <td>{{ roleLabel(user) }}</td>
+                    <td>
+                      <span class="status-badge" [class.verified]="user.is_active" [class.rejected]="!user.is_active">
+                        {{ user.is_active ? 'Activo' : 'Inactivo' }}
+                      </span>
+                    </td>
+                    <td>{{ formatDate(user.date_joined) }}</td>
+                    <td class="actions-cell">
+                      <button
+                        class="btn-mini"
+                        type="button"
+                        [disabled]="actionLoading || isCurrentUser(user)"
+                        (click)="toggleUserStatus(user)"
+                      >
+                        {{ user.is_active ? 'Desactivar' : 'Activar' }}
+                      </button>
+                      <button
+                        class="btn-mini danger"
+                        type="button"
+                        [disabled]="actionLoading || isCurrentUser(user)"
+                        (click)="deleteUser(user)"
+                      >
+                        Eliminar
+                      </button>
+                      @if (isCurrentUser(user)) {
+                        <span class="muted action-note">Tu cuenta</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+
+      @if (activeTab === 'productos') {
+        <section class="admin-card">
+          <div class="card-head">
+            <div>
+              <h2>Productos publicados</h2>
+              <p>Revisa productos de productores, certificados y publicaciones visibles.</p>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="admin-table product-table">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Productor</th>
+                  <th>Precio</th>
+                  <th>Stock</th>
+                  <th>Verificacion</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (product of products; track product.id) {
+                  <tr>
+                    <td>
+                      <strong>{{ product.name }}</strong>
+                      <span>{{ product.origin }}</span>
+                    </td>
+                    <td>{{ product.ownerEmail || product.ownerName || 'Sin productor' }}</td>
+                    <td>{{ formatMoney(product.price) }}</td>
+                    <td>{{ product.quantity }}</td>
+                    <td>
+                      <span [class]="statusClass(product.verification_status)">
+                        {{ product.verification_status }}
+                      </span>
+                    </td>
+                    <td class="actions-cell">
+                      <a
+                        class="btn-mini"
+                        *ngIf="product.certificate_url"
+                        [href]="product.certificate_url"
+                        target="_blank"
+                        rel="noopener"
+                      >
+                        Certificado
+                      </a>
+                      <button class="btn-mini danger" type="button" [disabled]="actionLoading" (click)="deleteProduct(product)">
+                        Eliminar
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+
+      @if (activeTab === 'verificaciones') {
+        <section class="admin-card">
+          <div class="card-head">
+            <div>
+              <h2>Verificaciones ecologicas</h2>
+              <p>Gestiona solicitudes pendientes y cambia el estado de cada producto.</p>
+            </div>
+          </div>
+
+          @if (!products.length) {
+            <p class="state-message">No hay productos publicados.</p>
+          } @else {
+            <div class="verification-grid">
+              @for (product of products; track product.id) {
+                <article class="verification-item">
+                  <div>
+                    <span [class]="statusClass(product.verification_status)">
+                      {{ product.verification_status }}
+                    </span>
+                    <h3>{{ product.name }}</h3>
+                    <p>{{ product.ownerEmail || product.ownerName || 'Sin productor' }} · {{ product.origin }}</p>
+                  </div>
+
+                  <div class="verification-actions">
+                    <button type="button" [disabled]="actionLoading" (click)="updateVerification(product, 'PENDIENTE')">
+                      Pendiente
+                    </button>
+                    <button type="button" [disabled]="actionLoading" (click)="updateVerification(product, 'VERIFICADO')">
+                      Verificar
+                    </button>
+                    <button type="button" [disabled]="actionLoading" (click)="updateVerification(product, 'RECHAZADO')">
+                      Rechazar
+                    </button>
+                  </div>
+                </article>
+              }
+            </div>
+          }
+        </section>
+      }
+
+      @if (activeTab === 'consultas') {
+        <section class="admin-card">
+          <div class="card-head">
+            <div>
+              <h2>Consultas recibidas</h2>
+              <p>Revisa mensajes de contacto y convierte clientes en productores cuando corresponda.</p>
+            </div>
+          </div>
+
+          @if (!contacts.length) {
+            <p class="state-message">Aun no hay consultas registradas.</p>
+          } @else {
+            <div class="table-wrap">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Contacto</th>
+                    <th>Motivo</th>
+                    <th>Mensaje</th>
+                    <th>Fecha</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (contact of contacts; track contact.id) {
+                    <tr>
+                      <td>
+                        <strong>{{ contact.nombre }}</strong>
+                        <span>{{ contact.email }}</span>
+                      </td>
+                      <td>{{ contact.motivo }}</td>
+                      <td>{{ contact.mensaje }}</td>
+                      <td>{{ formatDate(contact.created_at) }}</td>
+                      <td class="actions-cell">
+                        @if (canPromoteContact(contact)) {
+                          <button
+                            class="btn-mini"
+                            type="button"
+                            [disabled]="actionLoading"
+                            (click)="promoteContactUser(contact)"
+                          >
+                            Cambiar a productor
+                          </button>
+                        } @else if (findUserByEmail(contact.email)?.rol === 'PRODUCTOR') {
+                          <span class="muted action-note">Ya es productor</span>
+                        } @else {
+                          <span class="muted action-note">Sin accion</span>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </section>
+      }
+
+      @if (activeTab === 'logs') {
+        <section class="admin-card">
+          <div class="card-head">
+            <div>
+              <h2>Log del sistema</h2>
+              <p>Ultimas acciones realizadas desde el panel de administracion.</p>
+            </div>
+          </div>
+
+          @if (!logs.length) {
+            <p class="state-message">Aun no hay acciones registradas.</p>
+          } @else {
+            <div class="log-list">
+              @for (log of logs; track log.id) {
+                <article class="log-item">
+                  <div>
+                    <strong>{{ log.action }}</strong>
+                    <span>{{ log.detail }}</span>
+                  </div>
+                  <div>
+                    <span>{{ log.admin_email || 'Admin eliminado' }}</span>
+                    <time>{{ formatDate(log.created_at) }}</time>
+                  </div>
+                </article>
+              }
+            </div>
+          }
+        </section>
+      }
+    }
+  </section>
+</main>

@@ -1,0 +1,237 @@
+<main class="producer-profile-page">
+  <!-- Loading State -->
+  @if (loading) {
+    <div class="loading-container">
+      <div class="loading-spinner"></div>
+      <p>Cargando perfil del productor...</p>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (!loading && error) {
+    <div class="error-container">
+      <div class="error-icon">
+        <i class="fa-solid fa-circle-exclamation"></i>
+      </div>
+      <h2>{{ error }}</h2>
+      <button class="btn-back" (click)="goBack()">
+        <i class="fa-solid fa-arrow-left"></i>
+        Volver al catálogo
+      </button>
+    </div>
+  }
+
+  <!-- Profile Content -->
+  @if (!loading && producer) {
+    <!-- Back Link -->
+    <div class="back-bar">
+      <button class="btn-back-link" (click)="goBack()">
+        <i class="fa-solid fa-arrow-left"></i>
+        Volver al catálogo
+      </button>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="producer-hero">
+      <div class="hero-bg-pattern"></div>
+
+      <div class="hero-content">
+        <div class="avatar-container">
+          <div class="avatar">{{ avatarInitials }}</div>
+          <div class="avatar-glow"></div>
+        </div>
+
+        <div class="hero-info">
+          <div class="producer-badge">
+            <i class="fa-solid fa-leaf"></i>
+            Productor Ecológico
+          </div>
+          <h1 class="producer-name">{{ producer.name }}</h1>
+
+          <div class="producer-meta">
+            @if (producer.provincia) {
+              <span class="meta-item">
+                <i class="fa-solid fa-location-dot"></i>
+                {{ producer.provincia }}
+              </span>
+            }
+            <span class="meta-item">
+              <i class="fa-solid fa-calendar"></i>
+              Miembro desde {{ memberSince }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+      <div class="stat-card rating-card">
+        <div class="stat-icon">
+          <i class="fa-solid fa-star"></i>
+        </div>
+        <div class="stat-value">{{ producer.average_rating || 0 }}</div>
+        <div class="stat-label">Valoración media</div>
+        <div class="stat-stars">
+          @for (star of starArray; track star) {
+            <span class="star" [class.filled]="star <= producer.average_rating">
+              {{ star <= producer.average_rating ? '★' : '☆' }}
+            </span>
+          }
+        </div>
+      </div>
+
+      <div class="stat-card reviews-card">
+        <div class="stat-icon">
+          <i class="fa-solid fa-comment"></i>
+        </div>
+        <div class="stat-value">{{ producer.total_reviews }}</div>
+        <div class="stat-label">Reseñas totales</div>
+      </div>
+
+      <div class="stat-card products-card">
+        <div class="stat-icon">
+          <i class="fa-solid fa-boxes-stacked"></i>
+        </div>
+        <div class="stat-value">{{ producer.total_products }}</div>
+        <div class="stat-label">Productos verificados</div>
+      </div>
+    </section>
+
+    <!-- Tabs -->
+    <section class="tabs-section">
+      <div class="tabs-bar">
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'productos'"
+          (click)="setTab('productos')"
+          id="tab-productos"
+        >
+          <i class="fa-solid fa-box"></i>
+          Productos
+          <span class="tab-count">{{ producer.total_products }}</span>
+        </button>
+
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'resenas'"
+          (click)="setTab('resenas')"
+          id="tab-resenas"
+        >
+          <i class="fa-solid fa-star"></i>
+          Reseñas
+          <span class="tab-count">{{ producer.total_reviews }}</span>
+        </button>
+      </div>
+
+      <!-- Products Tab -->
+      @if (activeTab === 'productos') {
+        <div class="tab-content" id="products-grid">
+          @if (producer.products.length > 0) {
+            <div class="products-grid">
+              @for (product of producer.products; track product.id) {
+                <div class="product-card" (click)="navigateToProduct(product.id)" tabindex="0" role="button">
+                  <div class="product-img-wrapper">
+                    <img
+                      [src]="fixMediaUrl(getProductImageUrl(product))"
+                      [alt]="product.name"
+                      class="product-img"
+                    />
+                    @if (product.verification_status === 'VERIFICADO') {
+                      <img
+                        src="assets/images/sello-eco.png"
+                        alt="EcoSello"
+                        class="product-eco-badge"
+                      />
+                    }
+                  </div>
+
+                  <div class="product-details">
+                    <h3 class="product-name">{{ product.name }}</h3>
+                    <p class="product-origin">{{ product.origin }}</p>
+
+                    <div class="product-rating-row">
+                      <span class="product-stars">
+                        @for (star of starArray; track star) {
+                          {{ star <= getProductRating(product) ? '★' : '☆' }}
+                        }
+                      </span>
+                      <span class="product-rating-num">
+                        {{ getProductRating(product) }}
+                      </span>
+                      <small>({{ getProductReviewsCount(product) }})</small>
+                    </div>
+
+                    <div class="product-price-row">
+                      <span class="product-price">
+                        {{ product.price | number:'1.2-2' }} €
+                      </span>
+                      <span class="product-unit">/ {{ product.unit }}</span>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="empty-tab">
+              <i class="fa-solid fa-box-open"></i>
+              <p>Este productor aún no tiene productos verificados.</p>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Reviews Tab -->
+      @if (activeTab === 'resenas') {
+        <div class="tab-content" id="reviews-list">
+          @if (producer.reviews.length > 0) {
+            <div class="reviews-list">
+              @for (review of producer.reviews; track review.id) {
+                <div class="review-card">
+                  <div class="review-top">
+                    <div class="review-user-info">
+                      <div class="review-avatar">
+                        {{ review.userName ? review.userName.charAt(0).toUpperCase() : 'U' }}
+                      </div>
+                      <div>
+                        <strong class="review-user-name">{{ review.userName }}</strong>
+                        <p class="review-product-name">
+                          <i class="fa-solid fa-box"></i>
+                          {{ review.productName }}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div class="review-rating-badge">
+                      <span class="review-stars">
+                        @for (star of starArray; track star) {
+                          <span [class.filled]="star <= review.rating">
+                            {{ star <= review.rating ? '★' : '☆' }}
+                          </span>
+                        }
+                      </span>
+                    </div>
+                  </div>
+
+                  <p class="review-comment">
+                    {{ review.comment || 'Sin comentario.' }}
+                  </p>
+
+                  <small class="review-date">
+                    <i class="fa-regular fa-clock"></i>
+                    {{ review.created_at | date:'dd/MM/yyyy' }}
+                  </small>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="empty-tab">
+              <i class="fa-solid fa-star-half-stroke"></i>
+              <p>Este productor aún no tiene reseñas.</p>
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+</main>

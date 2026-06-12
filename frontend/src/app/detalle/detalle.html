@@ -1,0 +1,70 @@
+<div class="detalle-container">
+  @if (producto) {
+  <div class="detalle-content">
+
+    <div class="img-section">
+      <div class="img-wrapper">
+        <img [src]="producto.imagenUrl" [alt]="producto.nombre" class="main-img">
+        @if (producto.tieneEcoSello) {
+        <img src="assets/images/sello-eco.png" alt="EcoSello" class="badge">
+        }
+      </div>
+    </div>
+
+    <div class="info-section">
+      <a routerLink="/catalogo" class="back-link">← Volver al catálogo</a>
+
+      <h1 class="title">{{ producto.nombre }}</h1>
+
+      <div class="meta-info">
+        <p><strong>Origen:</strong> {{ producto.origen }}</p>
+        <p><strong>Productor:</strong> {{ producto.productor }}</p>
+      </div>
+
+      <div class="price-box">
+        <span class="price">{{ producto.precio | number:'1.2-2' }}</span>
+        <span class="unit"> {{ producto.unidad }}</span>
+      </div>
+
+      <p class="description">
+        {{ producto.descripcion }}
+      </p>
+
+      @if (producto.certificadoUrl) {
+      <div class="certificate-box">
+        <div>
+          <span class="certificate-label">Certificado ecologico verificado</span>
+          <p class="certificate-text">Documento revisado por administracion.</p>
+        </div>
+        <a
+          [href]="producto.certificadoUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn-certificate"
+        >
+          Ver PDF
+        </a>
+      </div>
+      }
+
+      <div class="stock-info">
+        <span class="status-dot"></span>
+        <span>En stock ({{ producto.disponibilidad }} disponibles)</span>
+      </div>
+
+      <div class="actions">
+        <div class="quantity-wrapper">
+          <label for="cantidad">Cantidad:</label>
+          <input type="number" id="cantidad" value="1" min="1" [max]="producto.disponibilidad" #cantidadRef>
+        </div>
+        <button class="btn-buy" (click)="agregarAlCarrito(cantidadRef.value)">
+          Añadir al carrito
+        </button>
+      </div>
+    </div>
+
+  </div>
+  } @else {
+  <p class="not-found">Cargando producto o producto no encontrado...</p>
+  }
+</div>
