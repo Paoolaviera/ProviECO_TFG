@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fff3e0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ffe0b2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" rx="16" fill="url(#grad)" stroke="#ffb74d" stroke-width="2"/>
+  <g transform="translate(200, 130)">
+    <!-- Stylized Apple/Orange Icon -->
+    <circle cx="-15" cy="0" r="35" fill="#e53935" opacity="0.9"/>
+    <circle cx="20" cy="5" r="32" fill="#fb8c00" opacity="0.9"/>
+    <!-- Leaves -->
+    <path d="M-15 -35 C-10 -50 5 -45 0 -35 C-5 -45 -20 -45 -15 -35 Z" fill="#43a047"/>
+    <path d="M20 -27 C25 -42 40 -37 35 -27 C30 -37 15 -37 20 -27 Z" fill="#43a047"/>
+  </g>
+  <text x="200" y="240" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="700" fill="#e65100">FRUTAS</text>
+  <text x="200" y="265" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#ffb74d" letter-spacing="2">PROVIECO</text>
+</svg>

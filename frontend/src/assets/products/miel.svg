@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fffde7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#fff9c4;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" rx="16" fill="url(#grad)" stroke="#fbc02d" stroke-width="2"/>
+  <g transform="translate(200, 130)">
+    <!-- Honey jar and bee -->
+    <rect x="-25" y="-35" width="50" height="65" rx="10" fill="#fff59d" stroke="#f57f17" stroke-width="3"/>
+    <ellipse cx="0" cy="-35" rx="28" ry="8" fill="#ffe082" stroke="#f57f17" stroke-width="3"/>
+    <path d="M-20 5 C0 15 0 15 20 5 L20 25 L-20 25 Z" fill="#ffb300"/>
+    <circle cx="25" cy="-15" r="10" fill="#ffeb3b" stroke="#333" stroke-width="1.5"/>
+    <line x1="25" y1="-25" x2="25" y2="-5" stroke="#333" stroke-width="2"/>
+    <line x1="20" y1="-15" x2="30" y2="-15" stroke="#333" stroke-width="2"/>
+  </g>
+  <text x="200" y="240" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="700" fill="#f57f17">MIEL</text>
+  <text x="200" y="265" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#fbc02d" letter-spacing="2">PROVIECO</text>
+</svg>

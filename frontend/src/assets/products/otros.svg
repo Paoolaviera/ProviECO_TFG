@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f9fbe7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f0f4c3;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" rx="16" fill="url(#grad)" stroke="#c0ca33" stroke-width="2"/>
+  <g transform="translate(200, 130)">
+    <!-- Package/basket of products -->
+    <path d="M-40 20 L40 20 L30 -20 L-30 -20 Z" fill="#d7ccc8" stroke="#8d6e63" stroke-width="3"/>
+    <circle cx="-15" cy="-25" r="15" fill="#e53935"/>
+    <circle cx="15" cy="-28" r="16" fill="#fdd835"/>
+    <rect x="-5" y="-35" width="10" height="20" fill="#4caf50"/>
+  </g>
+  <text x="200" y="240" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="700" fill="#558b2f">PRODUCTOS LOCALES</text>
+  <text x="200" y="265" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#c0ca33" letter-spacing="2">PROVIECO</text>
+</svg>

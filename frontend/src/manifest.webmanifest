@@ -1,0 +1,17 @@
+{
+  "name": "ProviECO - Suministro Agroalimentario Local",
+  "short_name": "ProviECO",
+  "theme_color": "#2ecc71",
+  "background_color": "#f4faf4",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "assets/provieco-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,143 @@
+<div class="detalle-pedido-container">
+  <!-- Back button -->
+  <div class="back-nav">
+    <a routerLink="/restauracion" class="btn-back">
+      <i class="fa-solid fa-arrow-left"></i> Volver a Área de Restauración
+    </a>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Cargando detalles de suministro...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="error-state">
+    <i class="fa-solid fa-circle-exclamation"></i>
+    <p>{{ error }}</p>
+    <a routerLink="/restauracion" class="btn btn-primary">Volver</a>
+  </div>
+
+  <!-- Order Details -->
+  <div *ngIf="!loading && !error && order" class="details-layout">
+    
+    <header class="details-header">
+      <div class="header-main">
+        <span class="badge-type">Planificación</span>
+        <h1>Pedido de Suministro #{{ order.id }}</h1>
+        <p class="date-registered">Registrado el: {{ order.created_at | date:'dd/MM/yyyy HH:mm' }}</p>
+      </div>
+      <div class="header-status">
+        <span [class]="'badge-status ' + getStatusClass(order.estado_suministro)">
+          {{ getStatusLabel(order.estado_suministro) }}
+        </span>
+      </div>
+    </header>
+
+    <!-- Main columns grid -->
+    <div class="details-grid">
+      
+      <!-- Column 1: Informational panels -->
+      <div class="info-panel">
+        
+        <!-- Centro details -->
+        <section class="card-section">
+          <h2><i class="fa-solid fa-building-user"></i> Datos del Centro de Consumo</h2>
+          <div class="card-body">
+            <p><strong>Entidad:</strong> {{ order.centro_nombre || 'No especificado' }}</p>
+            <p><strong>Tipo de Centro:</strong> {{ order.tipo_centro || 'No especificado' }}</p>
+            <p><strong>Dirección de Entrega:</strong> {{ order.delivery_address || 'No especificado' }}</p>
+            <p><strong>Estimación Comensales:</strong> {{ order.numero_comensales || 0 }} comensales</p>
+          </div>
+        </section>
+
+        <!-- Planning specifics -->
+        <section class="card-section">
+          <h2><i class="fa-solid fa-calendar-day"></i> Datos de Entrega Planificada</h2>
+          <div class="card-body">
+            <p class="delivery-highlight">
+              <strong>Fecha Deseada:</strong> {{ order.fecha_entrega_deseada | date:'dd/MM/yyyy' }}
+            </p>
+            <p><strong>Requisitos y Observaciones del Centro:</strong></p>
+            <div class="bubble observations-bubble">
+              {{ order.observaciones || 'No se registraron observaciones específicas para este suministro.' }}
+            </div>
+          </div>
+        </section>
+
+        <!-- Farmer response -->
+        <section class="card-section status-reply-card" *ngIf="order.respuesta_productor || order.fecha_respuesta_productor">
+          <h2><i class="fa-solid fa-comment-dots"></i> Observaciones del Productor Asociado</h2>
+          <div class="card-body">
+            <div class="bubble reply-bubble">
+              {{ order.respuesta_productor || 'Confirmación de suministro en curso sin observaciones adicionales.' }}
+            </div>
+            <p class="reply-date" *ngIf="order.fecha_respuesta_productor">
+              Respondido el: {{ order.fecha_respuesta_productor | date:'dd/MM/yyyy HH:mm' }}
+            </p>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Column 2: Items Table -->
+      <div class="items-panel">
+        <section class="card-section">
+          <h2><i class="fa-solid fa-carrot"></i> Productos Reservados</h2>
+          <div class="card-body no-padding">
+            <table class="items-table">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th class="text-right">Cantidad</th>
+                  <th class="text-right">Precio unitario</th>
+                  <th class="text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of order.items">
+                  <td class="product-cell">
+                    <strong>{{ item.product_name }}</strong>
+                    <span class="product-subtext" *ngIf="item.product_details?.origin">Provincia: {{ item.product_details.origin }}</span>
+                  </td>
+                  <td class="text-right font-semibold">{{ item.quantity }} {{ item.product_details?.unit || 'uds' }}</td>
+                  <td class="text-right">{{ formatPrice(item.unit_price) }} €</td>
+                  <td class="text-right font-bold text-success">{{ formatPrice(item.subtotal) }} €</td>
+                </tr>
+                <tr class="total-row">
+                  <td colspan="3">Total Estimado de Suministro:</td>
+                  <td class="text-right total-amount">{{ formatPrice(order.total) }} €</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+    </div>
+
+    <!-- Traceability Timeline Section -->
+    <section class="timeline-section">
+      <h2><i class="fa-solid fa-truck-ramp-box"></i> Trazabilidad del Proceso Logístico y de Cultivo</h2>
+      <p class="timeline-subtitle">Siga el estado y los hitos de preparación y transporte local de sus productos.</p>
+
+      <div class="timeline-container">
+        <div class="timeline-step" *ngFor="let step of getTimelineSteps(); let i = index" [class.completed]="step.completed" [class.current]="step.current">
+          <div class="step-marker">
+            <div class="marker-circle">
+              <i class="fa-solid fa-check" *ngIf="step.completed && !step.current"></i>
+              <i class="fa-solid fa-circle" *ngIf="step.current"></i>
+            </div>
+            <div class="marker-line" *ngIf="i < getTimelineSteps().length - 1"></div>
+          </div>
+          <div class="step-content">
+            <h3>{{ step.title }}</h3>
+            <p>{{ step.desc }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>

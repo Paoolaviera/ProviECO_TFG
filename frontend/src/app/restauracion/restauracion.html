@@ -1,0 +1,722 @@
+<div class="restauracion-container">
+  <!-- Access Denied State -->
+  <div *ngIf="accessDenied" class="access-denied">
+    <div class="denied-card">
+      <i class="fa-solid fa-lock denied-icon"></i>
+      <h2>Acceso Restringido</h2>
+      <p>Esta sección está reservada exclusivamente para centros de restauración colectiva autorizados.</p>
+      <button class="btn btn-primary" routerLink="/login">Iniciar Sesión</button>
+    </div>
+  </div>
+
+  <!-- Authenticated State -->
+  <div *ngIf="!accessDenied" class="restauracion-layout">
+    
+    <!-- Hero Banner -->
+    <header class="restauracion-hero">
+      <div class="hero-info">
+        <span class="badge">Área Profesional - Restauración Colectiva</span>
+        <h1>Planificación y Gestión de Suministro</h1>
+        <p class="hero-desc">
+          Gestione plantillas EcoBox, programes sus pedidos con antelación y optimice sus necesidades de aprovisionamiento ecológico local para comedores colectivos.
+        </p>
+      </div>
+      <div class="center-info" *ngIf="authService.currentUser">
+        <h3>{{ authService.currentUser.nombre_centro }}</h3>
+        <p><i class="fa-solid fa-building"></i> Tipo: {{ authService.currentUser.tipo_centro }}</p>
+        <p><i class="fa-solid fa-user-tie"></i> Responsable: {{ authService.currentUser.persona_responsable }}</p>
+        <p><i class="fa-solid fa-circle-check" *ngIf="isValidated" style="color: #2ecc71;"></i> 
+           <i class="fa-solid fa-clock" *ngIf="!isValidated" style="color: #f1c40f;"></i>
+           Validación: <strong>{{ authService.currentUser.estado_validacion_centro || 'PENDIENTE' }}</strong>
+        </p>
+      </div>
+    </header>
+
+    <!-- Validation Status Warn Banner (PENDIENTE) -->
+    <div *ngIf="!isValidated && authService.currentUser?.estado_validacion_centro !== 'RECHAZADO'" class="validation-warn-banner" style="background: rgba(230, 126, 34, 0.1); border-left: 5px solid #e67e22; padding: 20px; border-radius: 8px; margin-bottom: 25px; display: flex; align-items: flex-start; gap: 15px;">
+      <i class="fa-solid fa-triangle-exclamation" style="color: #e67e22; font-size: 1.8rem; margin-top: 2px;"></i>
+      <div>
+        <h4 style="margin: 0 0 5px 0; color: #d35400; font-weight: 700;">Cuenta en Proceso de Validación</h4>
+        <p style="margin: 0 0 10px 0; font-size: 14px; color: var(--dark-grey); line-height: 1.4;">
+          Su documentación justificativa se encuentra actualmente bajo revisión del administrador. Mientras su cuenta no esté en estado <strong>VALIDADO</strong>, podrá navegar por el catálogo y simular planificaciones, pero no podrá registrar pedidos reales ni guardar plantillas activas.
+        </p>
+        <p style="margin: 0; font-size: 13px; font-weight: 600;">
+          Puedes comprobar y actualizar tu documentación cargada en la pestaña <a routerLink="/perfil" style="color: #d35400; text-decoration: underline;">Mi Perfil</a>.
+        </p>
+      </div>
+    </div>
+
+    <!-- Validation Status Error Banner (RECHAZADO) -->
+    <div *ngIf="!isValidated && authService.currentUser?.estado_validacion_centro === 'RECHAZADO'" class="validation-warn-banner" style="background: rgba(231, 76, 60, 0.1); border-left: 5px solid #e74c3c; padding: 20px; border-radius: 8px; margin-bottom: 25px; display: flex; align-items: flex-start; gap: 15px;">
+      <i class="fa-solid fa-circle-xmark" style="color: #e74c3c; font-size: 1.8rem; margin-top: 2px;"></i>
+      <div>
+        <h4 style="margin: 0 0 5px 0; color: #c0392b; font-weight: 700;">Cuenta de Restauración Rechazada</h4>
+        <p style="margin: 0 0 10px 0; font-size: 14px; color: var(--dark-grey); line-height: 1.4;">
+          Su solicitud de validación ha sido rechazada por el administrador. Hasta que no suba un documento válido y sea aprobado, las funciones de planificación de pedidos y creación de EcoBoxes estarán desactivadas.
+        </p>
+        <p *ngIf="authService.currentUser?.observaciones_validacion_admin" style="margin: 0 0 15px 0; font-size: 13px; font-style: italic; color: #c0392b; background: rgba(231, 76, 60, 0.05); padding: 10px; border-radius: 6px; border-left: 3px solid #e74c3c; line-height: 1.4;">
+          <strong>Motivo del rechazo indicado por el administrador:</strong> {{ authService.currentUser?.observaciones_validacion_admin }}
+        </p>
+        <p style="margin: 0; font-size: 13px; font-weight: 600;">
+          Por favor, suba una nueva documentación acreditativa en la pestaña <a routerLink="/perfil" style="color: #c0392b; text-decoration: underline;">Mi Perfil</a>.
+        </p>
+      </div>
+    </div>
+
+    <!-- Success & Error feedback -->
+    <div *ngIf="successMessage" class="feedback-banner success">
+      <i class="fa-solid fa-circle-check"></i> {{ successMessage }}
+    </div>
+    <div *ngIf="errorMessage" class="feedback-banner error">
+      <i class="fa-solid fa-circle-exclamation"></i> {{ errorMessage }}
+    </div>
+
+    <!-- TABS NAVIGATION -->
+    <nav class="tabs-nav" style="display: flex; gap: 15px; border-bottom: 2px solid var(--border); margin-bottom: 30px; padding-bottom: 2px;">
+      <button 
+        class="tab-link" 
+        [class.active]="activeTab === 'catalogo'" 
+        (click)="activeTab = 'catalogo'"
+        style="background: none; border: none; padding: 12px 20px; font-size: 1rem; font-weight: 700; cursor: pointer; color: #7f8c8d; border-bottom: 3px solid transparent; transition: all 0.2s; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-basket-shopping"></i> Catálogo y Planificación
+      </button>
+      <button 
+        class="tab-link" 
+        [class.active]="activeTab === 'ecoboxes'" 
+        (click)="activeTab = 'ecoboxes'"
+        style="background: none; border: none; padding: 12px 20px; font-size: 1rem; font-weight: 700; cursor: pointer; color: #7f8c8d; border-bottom: 3px solid transparent; transition: all 0.2s; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-boxes-packing"></i> Mis EcoBoxes
+      </button>
+      <button 
+        class="tab-link" 
+        [class.active]="activeTab === 'previsiones'" 
+        (click)="activeTab = 'previsiones'"
+        style="background: none; border: none; padding: 12px 20px; font-size: 1rem; font-weight: 700; cursor: pointer; color: #7f8c8d; border-bottom: 3px solid transparent; transition: all 0.2s; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-chart-line"></i> Previsiones de Suministro
+      </button>
+    </nav>
+
+    <!-- ── TAB 1: CATALOGO Y PLANIFICACION ── -->
+    <div *ngIf="activeTab === 'catalogo'" class="workspace-grid">
+      
+      <!-- Left column: Products catalog -->
+      <div class="products-column">
+        <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 15px; color: var(--dark-grey);">Seleccione productos para su planificación</h2>
+        
+        <!-- Filters panel -->
+        <div class="filters-bar">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" [(ngModel)]="searchTerm" placeholder="Buscar por nombre, provincia, productor..." />
+          </div>
+
+          <div class="category-pills">
+            <button 
+              *ngFor="let cat of categorias" 
+              (click)="selectedCategoria = cat"
+              [class.active]="selectedCategoria === cat"
+              class="pill-btn">
+              {{ cat }}
+            </button>
+          </div>
+
+          <label class="toggle-control">
+            <input type="checkbox" [(ngModel)]="soloReservaFutura" />
+            <span>Solo productos con reserva planificada (cosechas futuras)</span>
+          </label>
+        </div>
+
+        <!-- Products List -->
+        <div *ngIf="loading" class="loading-state">
+          <div class="spinner"></div>
+          <p>Cargando productos...</p>
+        </div>
+
+        <div *ngIf="!loading && filteredProducts.length === 0" class="empty-state">
+          <i class="fa-solid fa-basket-shopping"></i>
+          <p>No se encontraron productos que coincidan con la búsqueda.</p>
+        </div>
+
+        <div *ngIf="!loading && filteredProducts.length > 0" class="products-grid">
+          <div class="product-card" *ngFor="let prod of filteredProducts">
+            <!-- Badges -->
+            <div class="card-badges">
+              <span class="badge-cat">{{ prod.categoria }}</span>
+              <span *ngIf="prod.permite_reserva_futura" class="badge-reserva"><i class="fa-solid fa-calendar-check"></i> Cosecha Futura</span>
+            </div>
+
+            <!-- Image -->
+            <div class="card-image">
+              <img [src]="prod.image_url || 'assets/images/placeholder.png'" [alt]="prod.name" />
+            </div>
+
+            <!-- Info -->
+            <div class="card-info">
+              <h3>{{ prod.name }}</h3>
+              <p class="origin">Provincia: <strong>{{ prod.origin }}</strong></p>
+              <p class="origin" *ngIf="prod.finca_origen" style="font-size: 13px; margin-top: 2px;">Finca: <strong>{{ prod.finca_origen }}</strong></p>
+              <p class="producer">Productor: {{ prod.ownerName }}</p>
+              <p class="season"><i class="fa-cloud-sun fa-solid"></i> Temporada: <strong>{{ prod.temporada }}</strong></p>
+              
+              <div class="price-row">
+                <span class="price">{{ formatPrice(prod.price) }} €</span>
+                <span class="unit">/ {{ prod.unit }}</span>
+              </div>
+
+              <!-- Action button or planned inputs -->
+              <div class="planning-actions">
+                <div class="qty-selector">
+                  <input type="number" #qtyInput value="10" min="1" />
+                  <span>{{ prod.unit }}</span>
+                </div>
+                <button class="btn btn-add" (click)="addToBasket(prod, qtyInput.value)">
+                  <i class="fa-solid fa-plus"></i> Añadir
+                </button>
+              </div>
+
+              <button class="btn-detail-link" (click)="openDetails(prod)">
+                Ver certificado y trazabilidad
+              </button>
+
+              <div style="margin-top: 6px; text-align: center;">
+                <span
+                  *ngIf="prod.certificate_url || prod.verification_status === 'VERIFICADO'"
+                  style="font-size: 11px; font-weight: 700; color: #2e7d32; background-color: #e8f5e9; border: 1px solid #c8e6c9; padding: 2px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;"
+                >
+                  <i class="fa-solid fa-circle-check"></i> Certificado validado
+                </span>
+                <span
+                  *ngIf="!prod.certificate_url && prod.verification_status !== 'VERIFICADO'"
+                  style="font-size: 11px; color: var(--text-muted); display: block; margin: 4px 0;"
+                >
+                  Certificado no disponible
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right column: Planned Basket and Submit Form -->
+      <div class="basket-column">
+        <div class="sticky-basket">
+          <h2 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 15px; border-bottom: 2px solid var(--light-grey); padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+            Cesto de Planificación
+            <button *ngIf="basket.length > 0" class="btn btn-secondary" (click)="clearBasket()" style="padding: 4px 8px; font-size: 12px; font-weight: 600;">Limpiar</button>
+          </h2>
+          
+          <div *ngIf="basket.length === 0" class="empty-basket">
+            <i class="fa-solid fa-calendar-plus"></i>
+            <p>El cesto está vacío. Añade productos del catálogo.</p>
+          </div>
+
+          <div *ngIf="basket.length > 0" class="basket-items-list">
+            <div class="basket-item" *ngFor="let item of basket">
+              <div class="item-details">
+                <strong>{{ item.product.name }}</strong>
+                <p>{{ item.quantity }} {{ item.product.unit }} x {{ formatPrice(item.product.price) }} €</p>
+              </div>
+              <div class="item-actions">
+                <span>{{ formatPrice(Number(item.product.price) * item.quantity) }} €</span>
+                <button class="btn-remove" (click)="removeFromBasket(item.product.id)" title="Quitar">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="basket-total">
+              <span>Total Planificado:</span>
+              <strong>{{ formatPrice(basketTotal) }} €</strong>
+            </div>
+
+            <!-- EcoBox creation option -->
+            <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 8px;">
+              <button class="btn btn-secondary" (click)="openCreateEcoBoxModal()" style="width: 100%; font-weight: 700;">
+                <i class="fa-solid fa-file-circle-plus"></i> Guardar como Plantilla EcoBox
+              </button>
+            </div>
+
+            <!-- Direct Planned Order Submit Form -->
+            <form (ngSubmit)="submitPlannedOrder()" class="planning-form" style="border-top: 1px solid var(--border); padding-top: 15px; margin-top: 15px;">
+              <h4 style="margin: 0 0 10px 0; font-size: 0.95rem; font-weight: 700;">Enviar como Pedido Planificado Directo</h4>
+              
+              <div class="form-field">
+                <label for="fecha_entrega">Fecha de entrega deseada *</label>
+                <input 
+                  type="date" 
+                  id="fecha_entrega" 
+                  [(ngModel)]="fechaEntregaDeseada" 
+                  name="fechaEntregaDeseada" 
+                  required 
+                  [disabled]="!isValidated"
+                />
+              </div>
+
+              <div class="form-field">
+                <label for="obs">Observaciones y requisitos</label>
+                <textarea 
+                  id="obs" 
+                  [(ngModel)]="observaciones" 
+                  name="observaciones" 
+                  placeholder="Intolerancias, requisitos de empaquetado, etc." 
+                  rows="2"
+                  [disabled]="!isValidated">
+                </textarea>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-submit-plan" [disabled]="submitting || !isValidated" style="margin-top: 10px;">
+                <span *ngIf="!submitting"><i class="fa-solid fa-calendar-check"></i> Registrar Pedido Directo</span>
+                <span *ngIf="submitting">Registrando planificación...</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TAB 2: MIS ECOBOXES ── -->
+    <div *ngIf="activeTab === 'ecoboxes'" class="ecoboxes-workspace">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <div>
+          <h2 style="margin: 0; font-size: 1.6rem; font-weight: 800;">Plantillas EcoBox Activas</h2>
+          <p style="margin: 5px 0 0 0; color: #7f8c8d; font-size: 0.95rem;">Cree y gestione plantillas de menús cíclicos para simplificar la planificación de sus suministros.</p>
+        </div>
+        <button class="btn btn-primary" (click)="openCreateEcoBoxModal()" style="font-weight: 700;">
+          <i class="fa-solid fa-circle-plus"></i> Crear Plantilla EcoBox
+        </button>
+      </div>
+
+      <div *ngIf="loadingEcoBoxes" class="loading-state" style="padding: 40px;">
+        <div class="spinner"></div>
+        <p>Cargando sus EcoBoxes...</p>
+      </div>
+
+      <div *ngIf="!loadingEcoBoxes && ecoBoxes.length === 0" class="empty-state" style="padding: 60px; background: white; border-radius: 12px; border: 1px dashed var(--border);">
+        <i class="fa-solid fa-boxes-packing" style="font-size: 3rem; color: #bdc3c7; margin-bottom: 15px;"></i>
+        <h3>No tiene plantillas EcoBox configuradas</h3>
+        <p style="max-width: 400px; margin: 10px auto 20px auto; color: #7f8c8d;">Guarde sus selecciones de productos frecuentes como plantillas EcoBox para generar pedidos recurrentes con un solo click.</p>
+        <button class="btn btn-primary" (click)="activeTab = 'catalogo'">Planificar desde el Catálogo</button>
+      </div>
+
+      <div *ngIf="!loadingEcoBoxes && ecoBoxes.length > 0" class="ecoboxes-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 25px;">
+        <div class="ecobox-card" *ngFor="let box of ecoBoxes" style="background: white; border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s;">
+          <header class="ecobox-card-header" style="background: #f8f9fa; padding: 20px; border-bottom: 1px solid var(--border); position: relative;">
+            <span style="background: var(--light-green); color: var(--dark-green); padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; float: right;">
+              {{ box.frecuencia }}
+            </span>
+            <h3 style="margin: 0; font-size: 1.3rem; font-weight: 800; color: var(--dark-grey);">{{ box.nombre }}</h3>
+            <p style="margin: 8px 0 0 0; font-size: 13px; color: #7f8c8d;">
+              <i class="fa-solid fa-users"></i> Comensales estimación: <strong>{{ box.numero_comensales }}</strong>
+            </p>
+          </header>
+
+          <div class="ecobox-card-body" style="padding: 20px; flex: 1;">
+            <p *ngIf="box.descripcion" style="margin: 0 0 15px 0; font-size: 14px; font-style: italic; color: #7f8c8d;">
+              "{{ box.descripcion }}"
+            </p>
+
+            <h4 style="margin: 0 0 10px 0; font-size: 0.95rem; font-weight: 700; color: var(--dark-grey); text-transform: uppercase; letter-spacing: 0.5px;">Cesta de productos</h4>
+            <div class="ecobox-items-list" style="display: flex; flex-direction: column; gap: 8px;">
+              <div *ngFor="let item of box.items" style="display: flex; justify-content: space-between; align-items: center; font-size: 14px; border-bottom: 1px solid #f2f2f2; padding-bottom: 6px;">
+                <span>{{ item.product_name }}</span>
+                <span style="font-weight: 600; color: var(--dark-grey);">{{ item.quantity }} x {{ formatPrice(item.precio_historico) }} €</span>
+              </div>
+            </div>
+          </div>
+
+          <footer class="ecobox-card-footer" style="padding: 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fafafa; flex-wrap: wrap; gap: 15px;">
+            <div>
+              <span style="font-size: 12px; color: #7f8c8d; display: block;">Total estimado:</span>
+              <strong style="font-size: 1.3rem; color: var(--dark-green);">{{ formatPrice(box.total_estimado) }} €</strong>
+            </div>
+            
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary" (click)="openEditEcoBoxModal(box)" title="Editar Plantilla" style="padding: 8px 12px;">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              <button class="btn btn-secondary" (click)="deleteEcoBox(box.id)" title="Eliminar Plantilla" style="padding: 8px 12px; color: #e74c3c;">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+              <button class="btn btn-primary" (click)="openOrderFromEcoBoxModal(box)" style="font-weight: 700; font-size: 13px;" [disabled]="!isValidated">
+                <i class="fa-solid fa-calendar-check"></i> Generar Pedido
+              </button>
+            </div>
+          </footer>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TAB 3: PREVISIONES DE SUMINISTRO ── -->
+    <div *ngIf="activeTab === 'previsiones'" class="previsiones-workspace" style="display: flex; flex-direction: column; gap: 30px;">
+      
+      <!-- Stats Summary -->
+      <div class="stats-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px;">
+        <article class="stat-card" style="background: white; border: 1px solid var(--border); padding: 20px; border-radius: 12px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 15px;">
+          <div style="background: var(--light-green); color: var(--dark-green); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+            <i class="fa-solid fa-boxes-packing"></i>
+          </div>
+          <div>
+            <span style="font-size: 13px; color: #7f8c8d; display: block;">Plantillas de Suministro</span>
+            <strong style="font-size: 1.6rem; color: var(--dark-grey);">{{ ecoBoxes.length }} EcoBoxes</strong>
+          </div>
+        </article>
+
+        <article class="stat-card" style="background: white; border: 1px solid var(--border); padding: 20px; border-radius: 12px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 15px;">
+          <div style="background: rgba(52, 152, 219, 0.1); color: #3498db; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+            <i class="fa-solid fa-users"></i>
+          </div>
+          <div>
+            <span style="font-size: 13px; color: #7f8c8d; display: block;">Comensales Abastecidos</span>
+            <strong style="font-size: 1.6rem; color: var(--dark-grey);">CEIP San Lorenzo</strong>
+          </div>
+        </article>
+
+        <article class="stat-card" style="background: white; border: 1px solid var(--border); padding: 20px; border-radius: 12px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 15px;">
+          <div style="background: rgba(155, 89, 182, 0.1); color: #9b59b6; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+            <i class="fa-solid fa-clock"></i>
+          </div>
+          <div>
+            <span style="font-size: 13px; color: #7f8c8d; display: block;">Pedidos Planificados</span>
+            <strong style="font-size: 1.6rem; color: var(--dark-grey);">{{ plannedOrders.length }} Registrados</strong>
+          </div>
+        </article>
+      </div>
+
+      <!-- Aggregated Needs -->
+      <section class="aggregated-needs-section" style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 25px; box-shadow: var(--shadow);">
+        <h3 style="margin: 0 0 10px 0; font-size: 1.4rem; font-weight: 800;">Necesidades de Producción Agregadas</h3>
+        <p style="margin: 0 0 20px 0; color: #7f8c8d; font-size: 0.95rem;">Cálculo estimado del total de alimentos necesarios para cubrir los ciclos de suministro definidos en sus plantillas EcoBox activas.</p>
+
+        <div *ngIf="aggregatedNeeds.length === 0" class="empty-state" style="padding: 30px;">
+          <p>No hay necesidades calculadas. Añada productos a sus plantillas EcoBox.</p>
+        </div>
+
+        <div *ngIf="aggregatedNeeds.length > 0" class="table-responsive" style="overflow-x: auto;">
+          <table class="orders-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+              <tr style="background: #f8f9fa;">
+                <th style="padding: 12px 15px; border-bottom: 2px solid var(--border); font-weight: 700;">Producto</th>
+                <th style="padding: 12px 15px; border-bottom: 2px solid var(--border); font-weight: 700;">Categoría</th>
+                <th style="padding: 12px 15px; border-bottom: 2px solid var(--border); font-weight: 700; text-align: right;">Cantidad Total</th>
+                <th style="padding: 12px 15px; border-bottom: 2px solid var(--border); font-weight: 700; text-align: right;">Precio Promedio</th>
+                <th style="padding: 12px 15px; border-bottom: 2px solid var(--border); font-weight: 700; text-align: right;">Coste Total Estimado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let entry of aggregatedNeeds">
+                <td style="padding: 15px; border-bottom: 1px solid #f2f2f2; font-weight: 600;">{{ entry.product.name }}</td>
+                <td style="padding: 15px; border-bottom: 1px solid #f2f2f2; color: #7f8c8d;">{{ entry.product.categoria || 'Otros' }}</td>
+                <td style="padding: 15px; border-bottom: 1px solid #f2f2f2; text-align: right; font-weight: 700; color: var(--dark-grey);">
+                  {{ entry.totalQuantity }} {{ entry.product.unit || 'uds' }}
+                </td>
+                <td style="padding: 15px; border-bottom: 1px solid #f2f2f2; text-align: right; color: #7f8c8d;">
+                  {{ formatPrice(entry.product.price) }} €/{{ entry.product.unit || 'uds' }}
+                </td>
+                <td style="padding: 15px; border-bottom: 1px solid #f2f2f2; text-align: right; font-weight: 800; color: var(--dark-green);">
+                  {{ formatPrice(entry.totalCost) }} €
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Calendar of Upcoming Deliveries -->
+      <section class="upcoming-deliveries-section" style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 25px; box-shadow: var(--shadow);">
+        <h3 style="margin: 0 0 10px 0; font-size: 1.4rem; font-weight: 800;">Calendario Próximo de Recepciones (Trazabilidad)</h3>
+        <p style="margin: 0 0 20px 0; color: #7f8c8d; font-size: 0.95rem;">Entregas planificadas aprobadas o en proceso programadas para las próximas fechas.</p>
+
+        <div *ngIf="upcomingDeliveries.length === 0" class="empty-state" style="padding: 30px;">
+          <p>No tiene entregas programadas en los próximos días.</p>
+        </div>
+
+        <div *ngIf="upcomingDeliveries.length > 0" class="deliveries-timeline" style="display: flex; flex-direction: column; gap: 15px;">
+          <article 
+            *ngFor="let del of upcomingDeliveries" 
+            style="border: 1px solid var(--border); border-left: 6px solid #3498db; border-radius: 8px; padding: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+            <div>
+              <span style="font-size: 12px; color: #e67e22; font-weight: 700; text-transform: uppercase;">
+                Fecha Estimada: {{ del.fecha_entrega_deseada | date:'dd/MM/yyyy' }}
+              </span>
+              <h4 style="margin: 5px 0 8px 0; font-size: 1rem; font-weight: 700; color: var(--dark-grey);"><a [routerLink]="['/pedido-planificado', del.id]" style="color: var(--dark-grey); text-decoration: underline;">Pedido Planificado #{{ del.id }}</a></h4>
+              
+              <div style="font-size: 13px; margin: 5px 0 10px 0; color: #555;" *ngIf="del.frecuencia">
+                <strong>Frecuencia:</strong> 
+                <span style="color: var(--primary, #2ecc71); font-weight: 600;">
+                  {{ del.frecuencia.toUpperCase() === 'UNICO' ? 'Entrega única' : 
+                     (del.frecuencia.toUpperCase() === 'SEMANAL' ? 'Semanal' : 
+                     (del.frecuencia.toUpperCase() === 'QUINCENAL' ? 'Quincenal, cada 15 días' : 
+                     (del.frecuencia.toUpperCase() === 'MENSUAL' ? 'Mensual' : del.frecuencia))) }}
+                </span>
+                
+                <div *ngIf="del.frecuencia.toUpperCase() !== 'UNICO'" style="margin-top: 4px; font-size: 12px; color: #7f8c8d;">
+                  <strong>Próximas entregas previstas:</strong>
+                  <span *ngFor="let dateStr of getFutureDates(del.fecha_entrega_deseada, del.frecuencia); let last = last" style="margin-left: 5px; font-weight: 600;">
+                    {{ dateStr | date:'dd/MM/yyyy' }}{{ !last ? ',' : '' }}
+                  </span>
+                </div>
+              </div>
+
+              <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #7f8c8d; list-style-type: none;">
+                <li *ngFor="let item of del.items" style="margin-bottom: 6px;">
+                  • {{ item.product_name }} (x{{ item.quantity }}) —
+                  <span [class]="'badge-status ' + getItemStatusClass(item.estado_productor)" style="padding: 2px 6px; font-size: 10px; display: inline-flex;">
+                    {{ getItemStatusLabel(item.estado_productor) }}
+                  </span>
+                  <span *ngIf="item.observaciones_productor" style="font-size: 11px; color: #e74c3c; font-style: italic; display: block; margin-left: 10px; margin-top: 2px;">
+                    Motivo rechazo: "{{ item.observaciones_productor }}"
+                  </span>
+                </li>
+              </ul>
+            </div>
+            
+            <div style="text-align: right;">
+              <span [class]="'badge-status ' + getStatusClass(del.estado_suministro)" style="margin-bottom: 8px;">
+                {{ getStatusLabel(del.estado_suministro) }}
+              </span>
+              <strong style="display: block; font-size: 1.1rem; color: var(--dark-grey);">{{ formatPrice(del.total) }} €</strong>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- Anti-waste & Sustainability alerts -->
+      <section class="antiwaste-alert" style="background: linear-gradient(135deg, #27ae60, #2ecc71); color: white; border-radius: 12px; padding: 25px; box-shadow: var(--shadow); display: flex; align-items: flex-start; gap: 20px;">
+        <i class="fa-solid fa-leaf" style="font-size: 2.5rem; margin-top: 5px;"></i>
+        <div>
+          <h3 style="margin: 0 0 8px 0; font-size: 1.3rem; font-weight: 800; color: white;">Compromiso contra el Desperdicio Alimentario</h3>
+          <p style="margin: 0 0 15px 0; font-size: 14px; opacity: 0.95; line-height: 1.5;">
+            La planificación de suministros mediante EcoBoxes permite a los productores locales de la comarca sembrar y reservar de forma precisa las cantidades requeridas, reduciendo a cero el descarte de producto fresco.
+          </p>
+          <div style="background: rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 12px; font-size: 13px; border-left: 4px solid #fff; line-height: 1.4;">
+            <strong>Consejo Ecológico:</strong> Adapte el número de comensales en sus plantillas EcoBoxes cuando prevea periodos vacacionales o días festivos. Así, los productores asociados podrán reorientar su producción futura al mercado de venta directa general.
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Bottom Section: Previous Planned Orders (shown at bottom of page) -->
+    <section class="previous-orders-section" style="margin-top: 40px;" *ngIf="activeTab === 'catalogo'">
+      <h2>Historial de Planificación y Trazabilidad de Suministros</h2>
+
+      <div *ngIf="loadingOrders" class="loading-orders">
+        <div class="spinner"></div>
+        <p>Cargando historial...</p>
+      </div>
+
+      <div *ngIf="!loadingOrders && plannedOrders.length === 0" class="empty-orders">
+        <p>Aún no has registrado ningún pedido planificado.</p>
+      </div>
+
+      <div *ngIf="!loadingOrders && plannedOrders.length > 0" class="orders-table-wrapper">
+        <table class="orders-table">
+          <thead>
+            <tr>
+              <th>ID Pedido</th>
+              <th>Fecha Registro</th>
+              <th>Fecha Entrega Deseada</th>
+              <th>Productos</th>
+              <th>Total Estimado</th>
+              <th>Estado de Suministro</th>
+              <th>Observaciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let order of plannedOrders">
+              <td><a [routerLink]="['/pedido-planificado', order.id]" style="color: var(--primary-green); font-weight: bold; text-decoration: underline;">#{{ order.id }}</a></td>
+              <td>{{ order.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td>{{ order.fecha_entrega_deseada | date:'dd/MM/yyyy' }}</td>
+              <td>
+                <ul class="order-items-bullet" style="list-style-type: none; padding-left: 0;">
+                  <li *ngFor="let item of order.items" style="margin-bottom: 6px;">
+                    • {{ item.product_name }} (x{{ item.quantity }}) —
+                    <span [class]="'badge-status ' + getItemStatusClass(item.estado_productor)" style="padding: 2px 6px; font-size: 10px; display: inline-flex;">
+                      {{ getItemStatusLabel(item.estado_productor) }}
+                    </span>
+                    <span *ngIf="item.observaciones_productor" style="font-size: 11px; color: #e74c3c; font-style: italic; display: block; margin-left: 10px; margin-top: 2px;">
+                      Motivo rechazo: "{{ item.observaciones_productor }}"
+                    </span>
+                  </li>
+                </ul>
+              </td>
+              <td><strong>{{ formatPrice(order.total) }} €</strong></td>
+              <td>
+                <span [class]="'badge-status ' + getStatusClass(order.estado_suministro)">
+                  {{ getStatusLabel(order.estado_suministro) }}
+                </span>
+                <p *ngIf="order.respuesta_productor" style="margin: 4px 0 0 0; font-size: 11px; color: #7f8c8d; font-style: italic;">
+                  Respuesta productor: "{{ order.respuesta_productor }}"
+                </p>
+              </td>
+              <td class="muted">{{ order.observaciones || '-' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal-backdrop" *ngIf="selectedProducto" (click)="closeDetails()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <header class="modal-header">
+      <h2>{{ selectedProducto.name }}</h2>
+      <button class="btn-close" (click)="closeDetails()">&times;</button>
+    </header>
+    
+    <div class="modal-body">
+      <div class="modal-grid">
+        <div class="modal-img-container">
+          <img [src]="selectedProducto.image_url || 'assets/images/placeholder.png'" [alt]="selectedProducto.name" />
+        </div>
+        <div class="modal-info-container">
+          <p><strong>Categoría:</strong> {{ selectedProducto.categoria }}</p>
+          <p><strong>Provincia:</strong> {{ selectedProducto.origin }}</p>
+          <p *ngIf="selectedProducto.finca_origen"><strong>Finca de origen:</strong> {{ selectedProducto.finca_origen }}</p>
+          <p><strong>Productor:</strong> {{ selectedProducto.ownerName }}</p>
+          <p><strong>Temporada:</strong> {{ selectedProducto.temporada }}</p>
+          <p *ngIf="selectedProducto.fecha_disponible_desde">
+            <strong>Disponible:</strong> desde {{ selectedProducto.fecha_disponible_desde | date:'dd/MM/yyyy' }} hasta {{ selectedProducto.fecha_disponible_hasta | date:'dd/MM/yyyy' }}
+          </p>
+          <p><strong>Stock actual disponible:</strong> {{ selectedProducto.quantity }} {{ selectedProducto.unit }}</p>
+          <p><strong>Descripción:</strong> {{ selectedProducto.description }}</p>
+          
+          <div class="cert-block" style="margin-top: 15px;">
+            <span class="cert-title" style="display: block; margin-bottom: 5px;"><i class="fa-solid fa-certificate"></i> Certificado Ecológico:</span>
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+              <span
+                *ngIf="selectedProducto.certificate_url || selectedProducto.verification_status === 'VERIFICADO'"
+                style="font-size: 13px; font-weight: 700; color: #2e7d32; background-color: #e8f5e9; border: 1px solid #c8e6c9; padding: 4px 12px; border-radius: 4px; display: inline-flex; align-items: center; gap: 6px;"
+              >
+                <i class="fa-solid fa-circle-check"></i> Certificado validado
+              </span>
+              <a
+                *ngIf="selectedProducto.certificate_url"
+                [href]="selectedProducto.certificate_url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn-certificate"
+                style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background-color: var(--primary-green); color: white; border-radius: 6px; font-weight: bold; text-decoration: none; font-size: 13px;"
+              >
+                <i class="fa-solid fa-file-pdf"></i> Ver certificado
+              </a>
+              <span
+                *ngIf="!selectedProducto.certificate_url && selectedProducto.verification_status !== 'VERIFICADO'"
+                style="font-size: 13px; color: var(--text-muted); display: inline-flex; align-items: center; gap: 6px;"
+              >
+                <i class="fa-solid fa-ban"></i> Certificado no disponible
+              </span>
+            </div>
+          </div>
+
+          <div class="qr-block" *ngIf="selectedProducto.qr_url">
+            <span class="qr-title"><i class="fa-solid fa-qrcode"></i> QR de Trazabilidad:</span>
+            <img [src]="selectedProducto.qr_url" alt="QR Trazabilidad" class="qr-image-modal" />
+            <p class="qr-desc">Escanee este código para ver la ficha completa de trazabilidad.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EcoBox Form Modal (Create or Edit) -->
+<div class="modal-backdrop" *ngIf="showEcoBoxFormModal" (click)="closeEcoBoxModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()" style="max-width: 600px;">
+    <header class="modal-header">
+      <h2>{{ isEditingEcoBox ? 'Editar Plantilla EcoBox' : 'Guardar Nueva EcoBox' }}</h2>
+      <button class="btn-close" (click)="closeEcoBoxModal()">&times;</button>
+    </header>
+    
+    <div class="modal-body">
+      <form (ngSubmit)="saveEcoBox()" class="planning-form">
+        <div class="form-field">
+          <label for="ecobox_nombre">Nombre de la Plantilla *</label>
+          <input type="text" id="ecobox_nombre" [(ngModel)]="ecoBoxForm.nombre" name="nombre" placeholder="Ej: Menú Escolar Invierno A" required />
+        </div>
+
+        <div class="form-field">
+          <label for="ecobox_desc">Descripción y Uso</label>
+          <input type="text" id="ecobox_desc" [(ngModel)]="ecoBoxForm.descripcion" name="descripcion" placeholder="Ej: Cesta de verduras básicas para purés" />
+        </div>
+
+        <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+          <div class="form-field">
+            <label for="ecobox_comensales">Número de Comensales *</label>
+            <input type="number" id="ecobox_comensales" [(ngModel)]="ecoBoxForm.numero_comensales" name="numero_comensales" required min="1" />
+          </div>
+
+          <div class="form-field">
+            <label for="ecobox_frecuencia">Frecuencia recomendada *</label>
+            <select id="ecobox_frecuencia" [(ngModel)]="ecoBoxForm.frecuencia" name="frecuencia" required>
+              <option value="UNICO">Entrega única</option>
+              <option value="SEMANAL">Semanal</option>
+              <option value="QUINCENAL">Quincenal</option>
+              <option value="MENSUAL">Mensual</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="ecobox_obs">Observaciones generales</label>
+          <textarea id="ecobox_obs" [(ngModel)]="ecoBoxForm.observaciones" name="observaciones" placeholder="Indicaciones especiales para el productor..." rows="2"></textarea>
+        </div>
+
+        <div style="margin-top: 15px; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+          <strong style="display: block; margin-bottom: 8px; font-size: 13px; color: var(--dark-grey);">Productos de la plantilla:</strong>
+          <div style="font-size: 13px; max-height: 120px; overflow-y: auto;">
+            <div *ngFor="let item of basket" style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 4px 0;">
+              <span>{{ item.product.name }}</span>
+              <strong>{{ item.quantity }} {{ item.product.unit }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button type="button" class="btn btn-secondary" (click)="closeEcoBoxModal()" style="flex: 1;">Cancelar</button>
+          <button type="submit" class="btn btn-primary" style="flex: 1;">
+            {{ submitting ? 'Guardando...' : 'Guardar EcoBox' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Order Generation from EcoBox Modal -->
+<div class="modal-backdrop" *ngIf="showOrderModal" (click)="closeOrderModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()" style="max-width: 500px;">
+    <header class="modal-header">
+      <h2>Generar Pedido Planificado</h2>
+      <button class="btn-close" (click)="closeOrderModal()">&times;</button>
+    </header>
+    
+    <div class="modal-body" *ngIf="selectedEcoBoxForOrder">
+      <p style="margin: 0 0 15px 0; font-size: 14px; color: var(--dark-grey); line-height: 1.4;">
+        Generará un nuevo pedido de suministro planificado basado en la plantilla <strong>{{ selectedEcoBoxForOrder.nombre }}</strong>.
+      </p>
+
+      <form (ngSubmit)="submitOrderFromEcoBox()" class="planning-form">
+        <div class="form-field">
+          <label for="order_fecha">Fecha de entrega deseada *</label>
+          <input type="date" id="order_fecha" [(ngModel)]="orderForm.fecha_entrega_deseada" name="fecha_entrega_deseada" required />
+        </div>
+
+        <div class="form-field">
+          <label for="order_mensaje">Mensaje o indicaciones para la entrega</label>
+          <textarea id="order_mensaje" [(ngModel)]="orderForm.mensaje_centro" name="mensaje_centro" placeholder="Ej: Entregar antes de las 9:00 AM en zona comedores" rows="3"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button type="button" class="btn btn-secondary" (click)="closeOrderModal()" style="flex: 1;">Cancelar</button>
+          <button type="submit" class="btn btn-primary" style="flex: 1;" [disabled]="submitting">
+            {{ submitting ? 'Procesando...' : 'Confirmar Pedido' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

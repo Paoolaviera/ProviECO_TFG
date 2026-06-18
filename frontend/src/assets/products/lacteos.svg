@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e1f5fe;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#b3e5fc;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" rx="16" fill="url(#grad)" stroke="#4fc3f7" stroke-width="2"/>
+  <g transform="translate(200, 130)">
+    <!-- Milk bottle and cheese -->
+    <rect x="-35" y="-40" width="30" height="70" rx="5" fill="#ffffff" stroke="#0288d1" stroke-width="3"/>
+    <line x1="-35" y1="-10" x2="-5" y2="-10" stroke="#0288d1" stroke-width="3"/>
+    <path d="M5 30 L45 30 L35 -10 L5 5 Z" fill="#ffeb3b" stroke="#fbc02d" stroke-width="2"/>
+    <circle cx="20" cy="10" r="4" fill="#f57f17"/>
+    <circle cx="30" cy="5" r="3" fill="#f57f17"/>
+    <circle cx="25" cy="22" r="5" fill="#f57f17"/>
+  </g>
+  <text x="200" y="240" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="700" fill="#01579b">LÁCTEOS</text>
+  <text x="200" y="265" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#4fc3f7" letter-spacing="2">PROVIECO</text>
+</svg>
