@@ -2,7 +2,7 @@
   <section class="admin-shell">
     <header class="admin-head">
       <div>
-        <p class="eyebrow">EcoMarket</p>
+        <p class="eyebrow">ProviECO</p>
         <h1>Panel Administrador</h1>
         <p class="lead">Gestiona usuarios, productos y verificaciones desde la aplicacion.</p>
       </div>
@@ -74,6 +74,9 @@
                     <td>
                       <strong>{{ user.full_name }}</strong>
                       <span>{{ user.email }}</span>
+                      <div *ngIf="user.rol === 'RESTAURACION'" style="font-size: 0.8rem; margin-top: 4px; padding: 4px 8px; background: #e8f8f0; border-radius: 4px; color: #27ae60; display: inline-block;">
+                        🏢 {{ user.nombre_centro }} ({{ user.tipo_centro }})
+                      </div>
                     </td>
                     <td>{{ roleLabel(user) }}</td>
                     <td>
@@ -137,7 +140,7 @@
                   <tr>
                     <td>
                       <strong>{{ product.name }}</strong>
-                      <span>{{ product.origin }}</span>
+                      <span>Provincia: {{ product.origin }}</span>
                     </td>
                     <td>{{ product.ownerEmail || product.ownerName || 'Sin productor' }}</td>
                     <td>{{ formatMoney(product.price) }}</td>
@@ -155,8 +158,11 @@
                         target="_blank"
                         rel="noopener"
                       >
-                        Certificado
+                        Ver certificado ecológico
                       </a>
+                      <span *ngIf="!product.certificate_url" style="font-size: 12px; color: var(--text-muted); padding: 0 6px;">
+                        Certificado no disponible
+                      </span>
                       <button class="btn-mini danger" type="button" [disabled]="actionLoading" (click)="deleteProduct(product)">
                         Eliminar
                       </button>
@@ -189,10 +195,36 @@
                       {{ product.verification_status }}
                     </span>
                     <h3>{{ product.name }}</h3>
-                    <p>{{ product.ownerEmail || product.ownerName || 'Sin productor' }} · {{ product.origin }}</p>
+                    <p>{{ product.ownerEmail || product.ownerName || 'Sin productor' }} · Provincia: {{ product.origin }}</p>
+                    
+                    <div style="margin-top: 10px;">
+                      <a
+                        *ngIf="product.certificate_url"
+                        [href]="product.certificate_url"
+                        target="_blank"
+                        rel="noopener"
+                        style="display: inline-flex; align-items: center; gap: 4px; font-weight: bold; color: var(--primary-green); text-decoration: none;"
+                      >
+                        <i class="fa-solid fa-file-pdf"></i> Ver certificado ecológico
+                      </a>
+                      <span *ngIf="!product.certificate_url" style="color: var(--text-muted); font-size: 13px;">
+                        <i class="fa-solid fa-ban"></i> Certificado no disponible
+                      </span>
+                    </div>
+
+                    <div style="margin-top: 12px;">
+                      <label style="display: block; font-size: 12px; margin-bottom: 4px; font-weight: bold; color: var(--text-muted);">
+                        Observaciones de validación (opcional):
+                      </label>
+                      <textarea
+                        [(ngModel)]="product.observaciones_admin"
+                        placeholder="Ej. Certificado vencido, observaciones, etc."
+                        style="width: 100%; min-height: 60px; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-body); color: var(--text-color); font-size: 13px; resize: vertical;"
+                      ></textarea>
+                    </div>
                   </div>
 
-                  <div class="verification-actions">
+                  <div class="verification-actions" style="margin-top: 10px;">
                     <button type="button" [disabled]="actionLoading" (click)="updateVerification(product, 'PENDIENTE')">
                       Pendiente
                     </button>
@@ -258,6 +290,127 @@
                         } @else {
                           <span class="muted action-note">Sin accion</span>
                         }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </section>
+      }
+
+      @if (activeTab === 'solicitudes_restauracion') {
+        <section class="admin-card">
+          <div class="card-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+            <div>
+              <h2>Solicitudes de restauración colectiva</h2>
+              <p>Revisa y valida o rechaza el acceso de comedores, colegios, hospitales y residencias.</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <label for="filtro-estado" style="font-weight: bold; font-size: 0.9rem;">Filtrar por estado:</label>
+              <select 
+                id="filtro-estado" 
+                [(ngModel)]="restauracionFilter" 
+                style="padding: 6px 12px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.9rem; background: var(--bg-card); color: var(--text-color); cursor: pointer;"
+              >
+                <option value="TODOS">TODOS</option>
+                <option value="PENDIENTE">PENDIENTE</option>
+                <option value="VALIDADO">VALIDADO</option>
+                <option value="RECHAZADO">RECHAZADO</option>
+              </select>
+            </div>
+          </div>
+
+          @if (!restauracionUsers.length) {
+            <p class="state-message">No hay ningún centro de restauración registrado con este estado.</p>
+          } @else {
+            <div class="table-wrap">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Entidad / Responsable</th>
+                    <th>Datos de Contacto</th>
+                    <th>Documentación</th>
+                    <th>Estado de Validación</th>
+                    <th>Comentarios y Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (user of restauracionUsers; track user.id) {
+                    <tr>
+                      <td>
+                        <strong>{{ user.nombre_centro || 'Sin nombre de centro' }}</strong>
+                        <span style="font-size: 0.85rem; display: block; color: var(--text-muted);">
+                          Tipo: {{ user.tipo_centro || 'No especificado' }}
+                        </span>
+                        <span style="font-size: 0.85rem; display: block; color: var(--text-muted);">
+                          Responsable: {{ user.persona_responsable || 'No especificado' }}
+                        </span>
+                        <span style="font-size: 0.8rem; display: block; font-style: italic; margin-top: 4px; color: var(--text-muted);">
+                          Observaciones centro: {{ user.observaciones_centro || 'Ninguna' }}
+                        </span>
+                      </td>
+                      <td>
+                        <span>{{ user.email }}</span>
+                        <span style="display: block; font-size: 0.85rem;">Teléfono: {{ user.telefono || 'No especificado' }}</span>
+                        <span style="display: block; font-size: 0.85rem;">Dirección: {{ user.direccion || 'No especificado' }} ({{ user.provincia || 'No especificada' }})</span>
+                      </td>
+                      <td>
+                        @if (user.documento_centro) {
+                          <a [href]="getDocumentUrl(user.documento_centro)" target="_blank" class="btn-mini" style="background-color: var(--primary-green); color: white; border: none; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 4px; font-weight: bold;">
+                            <i class="fa-solid fa-file-pdf"></i> Ver documento acreditativo
+                          </a>
+                          <span style="font-size: 0.75rem; display: block; color: var(--text-muted); margin-top: 4px;">
+                            Subido el: {{ formatDate(user.fecha_subida_documento) }}
+                          </span>
+                        } @else {
+                          <span class="status-badge pending" style="background-color: #f1f2f6; color: #7f8c8d;">Sin documento</span>
+                        }
+                      </td>
+                      <td>
+                        <span class="status-badge" 
+                              [class.verified]="user.estado_validacion_centro === 'VALIDADO'" 
+                              [class.rejected]="user.estado_validacion_centro === 'RECHAZADO'"
+                              [class.pending]="user.estado_validacion_centro === 'PENDIENTE'"
+                              style="font-weight: bold; padding: 4px 8px; border-radius: 4px; display: inline-block;">
+                          {{ user.estado_validacion_centro || 'PENDIENTE' }}
+                        </span>
+                        @if (user.observaciones_validacion_admin) {
+                          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; border-left: 2px solid #ddd; padding-left: 6px;">
+                            <strong>Motivo/Obs:</strong> {{ user.observaciones_validacion_admin }}
+                          </p>
+                        }
+                      </td>
+                      <td>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                          <textarea 
+                            placeholder="Escribe observaciones para validar o rechazar..." 
+                            [(ngModel)]="observacionesMap[user.id]"
+                            style="width: 100%; min-width: 180px; min-height: 50px; font-size: 0.85rem; padding: 6px; border: 1px solid var(--border-color); border-radius: 4px; resize: vertical;"
+                          ></textarea>
+                          
+                          <div style="display: flex; gap: 6px;">
+                            <button
+                              class="btn-mini"
+                              type="button"
+                              [disabled]="actionLoading || !user.documento_centro"
+                              (click)="procesarCentro(user, 'VALIDADO')"
+                              style="flex: 1;"
+                            >
+                              Validar
+                            </button>
+                            <button
+                              class="btn-mini danger"
+                              type="button"
+                              [disabled]="actionLoading"
+                              (click)="procesarCentro(user, 'RECHAZADO')"
+                              style="flex: 1;"
+                            >
+                              Rechazar
+                            </button>
+                          </div>
+                        </div>
                       </td>
                     </tr>
                   }

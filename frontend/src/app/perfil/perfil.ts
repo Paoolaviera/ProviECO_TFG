@@ -2,8 +2,10 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, inject, ViewEncapsulation } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ChangeDetectorRef } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { AuthService, UserPreferences } from '../services/auth.service';
 import { OrderService } from '../services/order.service';
 import { ProfileService, Address } from '../services/profile.service';
@@ -11,7 +13,7 @@ import { PROVINCIAS_ESPANA } from '../shared/provincias';
 
 @Component({
   selector: 'app-perfil',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './perfil.html',
   styleUrl: './perfil.css',
   encapsulation: ViewEncapsulation.None,
@@ -23,7 +25,7 @@ export class Perfil implements OnInit {
   private readonly orderService = inject(OrderService);
   private readonly profileService = inject(ProfileService);
   private readonly cdr = inject(ChangeDetectorRef);
-  private readonly apiUrl = 'http://localhost:8000/api/users/me/';
+  private readonly apiUrl = `${environment.apiUrl}/api/users/me/`;
 
   protected loading = false;
   protected accessDenied = false;
@@ -75,7 +77,7 @@ export class Perfil implements OnInit {
 
   protected user: UserProfile = {
     id: '',
-    nombre: 'Usuario EcoMarket',
+    nombre: 'Usuario ProviECO',
     email: 'email@ejemplo.com',
     rol: 'cliente',
     telefono: '',
@@ -89,6 +91,10 @@ export class Perfil implements OnInit {
     telefono: ['', [Validators.maxLength(20)]],
     direccion: ['', [Validators.maxLength(160)]],
     provincia: [''],
+    nombre_centro: [''],
+    tipo_centro: [''],
+    persona_responsable: [''],
+    observaciones_centro: [''],
   });
 
   protected readonly subscriptionForm = this.fb.nonNullable.group({
@@ -128,7 +134,7 @@ export class Perfil implements OnInit {
 
     this.user = {
       id: session.id,
-      nombre: session.name || 'Usuario EcoMarket',
+      nombre: session.name || 'Usuario ProviECO',
       email: session.email || 'email@ejemplo.com',
       rol: session.rol || 'cliente',
       telefono: '',
@@ -149,7 +155,7 @@ export class Perfil implements OnInit {
       .filter(Boolean)
       .slice(0, 2);
 
-    return parts.map((part) => part[0]?.toUpperCase() ?? '').join('') || 'UE';
+    return parts.map((part) => part[0]?.toUpperCase() ?? '').join('') || 'UP';
   }
 
   protected get roleLabel(): string {
@@ -159,7 +165,7 @@ export class Perfil implements OnInit {
       case 'cliente':
         return 'Cuenta de cliente';
       default:
-        return 'Cuenta EcoMarket';
+        return 'Cuenta ProviECO';
     }
   }
 
@@ -197,6 +203,10 @@ export class Perfil implements OnInit {
       telefono: this.profileForm.controls.telefono.value.trim(),
       direccion: this.profileForm.controls.direccion.value.trim(),
       provincia: this.profileForm.controls.provincia.value,
+      nombre_centro: this.profileForm.controls.nombre_centro?.value?.trim() || '',
+      tipo_centro: this.profileForm.controls.tipo_centro?.value || '',
+      persona_responsable: this.profileForm.controls.persona_responsable?.value?.trim() || '',
+      observaciones_centro: this.profileForm.controls.observaciones_centro?.value?.trim() || '',
     };
 
     this.saving = true;
@@ -210,6 +220,10 @@ export class Perfil implements OnInit {
           telefono: payload.telefono,
           direccion: payload.direccion,
           provincia: payload.provincia,
+          nombre_centro: payload.nombre_centro,
+          tipo_centro: payload.tipo_centro,
+          persona_responsable: payload.persona_responsable,
+          observaciones_centro: payload.observaciones_centro,
         }),
       );
 
@@ -220,6 +234,10 @@ export class Perfil implements OnInit {
         telefono: updatedUser.telefono,
         direccion: updatedUser.direccion,
         provincia: updatedUser.provincia,
+        nombre_centro: updatedUser.nombre_centro,
+        tipo_centro: updatedUser.tipo_centro,
+        persona_responsable: updatedUser.persona_responsable,
+        observaciones_centro: updatedUser.observaciones_centro,
       };
 
       this.authService.updateSession({
@@ -293,6 +311,22 @@ export class Perfil implements OnInit {
 
   protected toggleExpandedItem(id: number | string): void {
     this.expandedItemId = this.expandedItemId === id ? null : id;
+  }
+
+  protected changeSupplyStatus(orderId: number, newStatus: string): void {
+    this.clearMessages();
+    const promptMessage = prompt('Introduce observaciones opcionales para el centro (se guardará y comunicará al centro):') || '';
+    
+    this.orderService.updateOrderSupplyStatus(orderId, newStatus, promptMessage).subscribe({
+      next: () => {
+        this.successMessage = 'Estado de suministro del pedido #' + orderId + ' actualizado correctamente.';
+        this.loadOrdersOrSales();
+      },
+      error: (err) => {
+        this.errorMessage = err.error?.detail || 'No se pudo actualizar el estado de suministro.';
+        console.error(err);
+      }
+    });
   }
 
   protected translateStatus(status: string): string {
@@ -643,6 +677,38 @@ export class Perfil implements OnInit {
     }
   }
 
+  protected selectedValidationFile: File | null = null;
+  protected uploadingValidationFile = false;
+
+  protected onValidationFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      this.selectedValidationFile = file;
+    }
+  }
+
+  protected uploadValidationDocument(): void {
+    if (!this.selectedValidationFile) return;
+    this.uploadingValidationFile = true;
+    this.profileService.subirDocumento(this.selectedValidationFile).subscribe({
+      next: (updatedUser) => {
+        this.uploadingValidationFile = false;
+        this.selectedValidationFile = null;
+        this.successMessage = 'El documento se ha subido correctamente y está pendiente de validación.';
+        this.authService.updateSession({
+          documento_centro: updatedUser.documento_centro,
+          estado_validacion_centro: updatedUser.estado_validacion_centro
+        });
+        this.loadUserDetails();
+      },
+      error: (err) => {
+        this.uploadingValidationFile = false;
+        this.errorMessage = 'Error al subir el documento. Por favor, inténtelo de nuevo.';
+        console.error(err);
+      }
+    });
+  }
+
   private loadUserDetails(): void {
     this.clearMessages();
 
@@ -658,6 +724,13 @@ export class Perfil implements OnInit {
           telefono: remoteUser.telefono || '',
           direccion: remoteUser.direccion || '',
           provincia: remoteUser.provincia || '',
+          nombre_centro: remoteUser.nombre_centro || '',
+          tipo_centro: remoteUser.tipo_centro || '',
+          persona_responsable: remoteUser.persona_responsable || '',
+          observaciones_centro: remoteUser.observaciones_centro || '',
+          documento_centro: remoteUser.documento_centro || '',
+          estado_validacion_centro: remoteUser.estado_validacion_centro || 'PENDIENTE',
+          observaciones_validacion_admin: remoteUser.observaciones_validacion_admin || '',
         };
         this.syncFormWithUser();
         this.syncAccountForm();
@@ -680,6 +753,10 @@ export class Perfil implements OnInit {
       telefono: this.user.telefono || '',
       direccion: this.user.direccion || '',
       provincia: this.user.provincia || '',
+      nombre_centro: this.user.nombre_centro || '',
+      tipo_centro: this.user.tipo_centro || '',
+      persona_responsable: this.user.persona_responsable || '',
+      observaciones_centro: this.user.observaciones_centro || '',
     });
   }
 
@@ -693,6 +770,14 @@ export class Perfil implements OnInit {
   private clearMessages(): void {
     this.successMessage = '';
     this.errorMessage = '';
+  }
+
+  protected getDocumentUrl(path?: string): string {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path;
+    }
+    return `${environment.apiUrl}${path.startsWith('/') ? '' : '/'}${path}`;
   }
 }
 
@@ -711,4 +796,19 @@ interface UserProfile {
   telefono?: string;
   direccion?: string;
   provincia?: string;
+  nombre_centro?: string;
+  tipo_centro?: string;
+  persona_responsable?: string;
+  observaciones_centro?: string;
+  documento_centro?: string;
+  estado_validacion_centro?: string;
+  observaciones_validacion_admin?: string;
 }
+
+
+
+
+
+
+
+

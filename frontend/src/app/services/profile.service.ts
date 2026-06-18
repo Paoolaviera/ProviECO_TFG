@@ -21,11 +21,13 @@ export interface UserPreferences {
   notifications_enabled: boolean;
 }
 
+import { environment } from '../../environments/environment';
+
 @Injectable({
   providedIn: 'root'
 })
 export class ProfileService {
-  private readonly apiUrl = 'http://localhost:8000/api/users/me';
+  private readonly apiUrl = `${environment.apiUrl}/api/users/me`;
 
   constructor(private http: HttpClient) {}
 
@@ -61,5 +63,11 @@ export class ProfileService {
       new_password: newPassword,
       confirm_password: confirmPassword,
     });
+  }
+
+  subirDocumento(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('documento_centro', file);
+    return this.http.post<any>(`${environment.apiUrl}/api/users/me/subir-documento/`, formData);
   }
 }

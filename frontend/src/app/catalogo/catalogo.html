@@ -1,4 +1,9 @@
 <div class="catalogo-container">
+  <div *ngIf="successMessage" class="alert alert-success">
+    <span>{{ successMessage }}</span>
+    <button type="button" class="close-alert-btn" (click)="successMessage = ''" aria-label="Cerrar aviso">&times;</button>
+  </div>
+
   <div class="catalogo-header">
     <h1 class="page-title">Catalogo de productos</h1>
     <p class="subtitle">
@@ -128,13 +133,32 @@
         <div class="producto-info">
           <h3 class="producto-nombre">{{ producto.nombre }}</h3>
           <p class="producto-categoria">{{ producto.categoria }}</p>
-          <p class="producto-detalle">Origen: {{ producto.origen }}</p>
+          <p class="producto-detalle">Provincia: {{ producto.origen }}</p>
           <p class="producto-detalle" 
              (click)="verPerfilProductor(producto.ownerId, $event)"
              [class.clickable-producer]="authService.currentUser"
              title="Ver perfil del productor">
             Productor: <strong>{{ producto.productor }}</strong>
           </p>
+          <p class="producto-detalle" style="font-size: 13px; margin: 4px 0;">Temporada: <strong>{{ producto.temporada || 'Todo el año' }}</strong></p>
+          <div *ngIf="producto.permiteReservaFutura" class="reserva-badge-card" style="margin: 4px 0; font-size: 11px; font-weight: 700; color: #fff; background-color: var(--primary-green); padding: 2px 8px; border-radius: 4px; display: inline-block; width: max-content;">
+            Reserva Futura
+          </div>
+
+          <div style="margin-top: 6px; margin-bottom: 6px; text-align: center;">
+            <span
+              *ngIf="producto.certificadoUrl || producto.tieneEcoSello"
+              style="font-size: 11px; font-weight: 700; color: #2e7d32; background-color: #e8f5e9; border: 1px solid #c8e6c9; padding: 2px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;"
+            >
+              <i class="fa-solid fa-circle-check"></i> Certificado validado
+            </span>
+            <span
+              *ngIf="!producto.certificadoUrl && !producto.tieneEcoSello"
+              style="font-size: 11px; color: var(--text-muted); display: block; text-align: center; margin: 4px 0;"
+            >
+              Certificado no disponible
+            </span>
+          </div>
 
           <div class="precio-stock-container">
             <span class="precio">
@@ -209,7 +233,23 @@
             </p>
 
             <p class="modal-origen">
-              <strong>Origen:</strong> {{ selectedProducto.origen }}
+              <strong>Provincia:</strong> {{ selectedProducto.origen }}
+            </p>
+
+            <p class="modal-origen" *ngIf="selectedProducto.fincaOrigen">
+              <strong>Finca de origen:</strong> {{ selectedProducto.fincaOrigen }}
+            </p>
+
+            <p class="modal-origen">
+              <strong>Temporada:</strong> {{ selectedProducto.temporada }}
+            </p>
+
+            <p *ngIf="selectedProducto.fechaDisponibleDesde" class="modal-origen">
+              <strong>Disponible desde:</strong> {{ selectedProducto.fechaDisponibleDesde | date:'dd/MM/yyyy' }} hasta {{ selectedProducto.fechaDisponibleHasta | date:'dd/MM/yyyy' }}
+            </p>
+
+            <p *ngIf="selectedProducto.permiteReservaFutura" class="modal-origen" style="color: var(--primary-green); font-weight: 700;">
+              <i class="fa-solid fa-calendar-check"></i> Permite reserva planificada para restauración
             </p>
 
             <p class="modal-productor" 
@@ -239,25 +279,30 @@
               </span>
             </div>
 
-            @if (selectedProducto.certificadoUrl) {
-              <div class="modal-cert">
-                <a
-                  href="#"
-                  (click)="abrirCertificado(selectedProducto.certificadoUrl, $event)"
-                  class="btn-cert"
-                >
-                  <i class="fa-solid fa-file-pdf"></i>
-                  Ver certificado oficial
-                </a>
-
-                @if (errorCertificado) {
-                  <div class="error-cert-msg">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                    Certificado no encontrado en el servidor.
-                  </div>
-                }
-              </div>
-            }
+            <div class="modal-cert" style="margin-top: 15px; text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center;">
+              <span
+                *ngIf="selectedProducto.certificadoUrl || selectedProducto.tieneEcoSello"
+                style="font-size: 12px; font-weight: 700; color: #2e7d32; background-color: #e8f5e9; border: 1px solid #c8e6c9; padding: 6px 12px; border-radius: 4px; display: inline-flex; align-items: center; gap: 6px; width: 100%; justify-content: center; box-sizing: border-box;"
+              >
+                <i class="fa-solid fa-circle-check"></i> Certificado validado
+              </span>
+              <a
+                *ngIf="selectedProducto.certificadoUrl"
+                [href]="selectedProducto.certificadoUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn-certificate"
+                style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background-color: var(--primary-green); color: white; border-radius: 6px; font-weight: bold; text-decoration: none; font-size: 14px; width: 100%; justify-content: center; box-sizing: border-box;"
+              >
+                <i class="fa-solid fa-file-pdf"></i> Ver certificado ecológico
+              </a>
+              <span
+                *ngIf="!selectedProducto.certificadoUrl && !selectedProducto.tieneEcoSello"
+                style="font-size: 12px; color: var(--text-muted); display: inline-flex; align-items: center; gap: 6px; width: 100%; justify-content: center;"
+              >
+                <i class="fa-solid fa-ban"></i> Certificado no disponible
+              </span>
+            </div>
 
             @if (selectedProducto.qrUrl) {
               <div class="qr-trazabilidad">

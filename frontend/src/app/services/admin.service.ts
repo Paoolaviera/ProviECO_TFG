@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 import { ApiProduct } from './product.service';
 
@@ -20,6 +21,15 @@ export interface AdminUser {
   is_superuser: boolean;
   date_joined: string;
   last_login: string | null;
+  nombre_centro?: string;
+  tipo_centro?: string;
+  persona_responsable?: string;
+  observaciones_centro?: string;
+  documento_centro?: string;
+  estado_validacion_centro?: string;
+  observaciones_validacion_admin?: string;
+  fecha_subida_documento?: string;
+  fecha_validacion_centro?: string;
 }
 
 export interface AdminActionLog {
@@ -46,7 +56,7 @@ export interface AdminContactMessage {
   providedIn: 'root',
 })
 export class AdminService {
-  private readonly apiUrl = 'http://localhost:8000/api/users/admin';
+  private readonly apiUrl = `${environment.apiUrl}/api/users/admin`;
 
   constructor(private http: HttpClient) {}
 
@@ -74,9 +84,10 @@ export class AdminService {
     return this.http.get<ApiProduct[]>(`${this.apiUrl}/products/`);
   }
 
-  updateProductVerification(productId: number | string, verificationStatus: string): Observable<ApiProduct> {
+  updateProductVerification(productId: number | string, verificationStatus: string, observacionesAdmin?: string): Observable<ApiProduct> {
     return this.http.patch<ApiProduct>(`${this.apiUrl}/products/${productId}/`, {
       verification_status: verificationStatus,
+      observaciones_admin: observacionesAdmin,
     });
   }
 
@@ -90,5 +101,12 @@ export class AdminService {
 
   getContacts(): Observable<AdminContactMessage[]> {
     return this.http.get<AdminContactMessage[]>(`${this.apiUrl}/contacts/`);
+  }
+
+  validarCentro(userId: number, estado: 'PENDIENTE' | 'VALIDADO' | 'RECHAZADO', observaciones: string): Observable<AdminUser> {
+    return this.http.post<AdminUser>(`${this.apiUrl}/users/${userId}/validar-centro/`, {
+      estado,
+      observaciones,
+    });
   }
 }

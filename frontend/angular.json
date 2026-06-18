@@ -7,7 +7,7 @@
   },
   "newProjectRoot": "projects",
   "projects": {
-    "EcoMarket_Sprint1": {
+    "ProviECO_Sprint1": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -19,7 +19,7 @@
           "options": {
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
-            "assets": ["src/assets"],
+            "assets": ["src/assets", "src/manifest.webmanifest"],
             "styles": ["src/styles.css"]
           },
           "configurations": {
@@ -50,10 +50,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "EcoMarket_Sprint1:build:production"
+              "buildTarget": "ProviECO_Sprint1:build:production"
             },
             "development": {
-              "buildTarget": "EcoMarket_Sprint1:build:development"
+              "buildTarget": "ProviECO_Sprint1:build:development"
             }
           },
           "defaultConfiguration": "development"

@@ -7,17 +7,26 @@ User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     username = serializers.CharField(required=False)
+    documento_centro = serializers.FileField(required=False, allow_null=True)
 
     class Meta:
         model = User
         fields = (
             'id', 'username', 'email', 'first_name', 'last_name', 'password',
             'rol', 'telefono', 'direccion', 'provincia', 'is_active',
-            'is_staff', 'is_superuser'
+            'is_staff', 'is_superuser', 'nombre_centro', 'tipo_centro',
+            'persona_responsable', 'observaciones_centro',
+            'documento_centro', 'estado_validacion_centro', 'fecha_subida_documento',
+            'fecha_validacion_centro', 'observaciones_validacion_admin'
         )
-        read_only_fields = ('id', 'is_active', 'is_staff', 'is_superuser')
+        read_only_fields = (
+            'id', 'is_active', 'is_staff', 'is_superuser', 
+            'estado_validacion_centro', 'fecha_subida_documento',
+            'fecha_validacion_centro', 'observaciones_validacion_admin'
+        )
 
     def create(self, validated_data):
+        documento = validated_data.get('documento_centro', None)
         user = User.objects.create_user(
             username=validated_data['email'], # Use email as username
             email=validated_data['email'],
@@ -25,8 +34,19 @@ class UserSerializer(serializers.ModelSerializer):
             first_name=validated_data.get('first_name', ''),
             last_name=validated_data.get('last_name', ''),
             rol=validated_data.get('rol', 'CLIENTE'), # Default to CLIENTE
+            telefono=validated_data.get('telefono', ''),
+            direccion=validated_data.get('direccion', ''),
             provincia=validated_data.get('provincia', ''),
+            nombre_centro=validated_data.get('nombre_centro', ''),
+            tipo_centro=validated_data.get('tipo_centro', None),
+            persona_responsable=validated_data.get('persona_responsable', ''),
+            observaciones_centro=validated_data.get('observaciones_centro', ''),
+            documento_centro=documento
         )
+        if documento:
+            from django.utils import timezone
+            user.fecha_subida_documento = timezone.now()
+            user.save()
         # Create default preferences for new users
         UserPreferences.objects.get_or_create(user=user)
         return user
@@ -83,12 +103,17 @@ class AdminUserSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'username', 'email', 'first_name', 'last_name', 'full_name',
             'rol', 'telefono', 'direccion', 'provincia', 'is_active',
-            'is_staff', 'is_superuser', 'date_joined', 'last_login'
+            'is_staff', 'is_superuser', 'date_joined', 'last_login',
+            'nombre_centro', 'tipo_centro', 'persona_responsable', 'observaciones_centro',
+            'documento_centro', 'estado_validacion_centro', 'fecha_subida_documento',
+            'fecha_validacion_centro', 'observaciones_validacion_admin'
         )
         read_only_fields = (
             'id', 'username', 'email', 'first_name', 'last_name', 'full_name',
             'telefono', 'direccion', 'provincia', 'is_staff',
-            'is_superuser', 'date_joined', 'last_login'
+            'is_superuser', 'date_joined', 'last_login',
+            'nombre_centro', 'tipo_centro', 'persona_responsable', 'observaciones_centro',
+            'documento_centro', 'fecha_subida_documento'
         )
 
     def get_full_name(self, obj):
@@ -144,8 +169,17 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             'name': f"{self.user.first_name} {self.user.last_name}".strip() or self.user.username,
             'rol': 'ADMIN' if self.user.is_staff or self.user.is_superuser else self.user.rol,
             'provincia': self.user.provincia or '',
+            'telefono': self.user.telefono or '',
+            'direccion': self.user.direccion or '',
             'is_staff': self.user.is_staff,
             'is_superuser': self.user.is_superuser,
+            'nombre_centro': self.user.nombre_centro or '',
+            'tipo_centro': self.user.tipo_centro or '',
+            'persona_responsable': self.user.persona_responsable or '',
+            'observaciones_centro': self.user.observaciones_centro or '',
+            'documento_centro': self.user.documento_centro.url if self.user.documento_centro else '',
+            'estado_validacion_centro': self.user.estado_validacion_centro,
+            'observaciones_validacion_admin': self.user.observaciones_validacion_admin or '',
         }
 
         # Include preferences in login response

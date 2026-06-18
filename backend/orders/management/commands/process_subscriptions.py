@@ -85,7 +85,7 @@ class Command(BaseCommand):
 
         try:
             email = EmailMultiAlternatives(
-                subject=f'🌱 EcoMarket - Tienes un nuevo pedido recurrente #{order.id}',
+                subject=f'🌱 ProviECO - Tienes un nuevo pedido recurrente #{order.id}',
                 body=plain_message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 to=[user.email]

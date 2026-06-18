@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-contacto',
@@ -51,7 +52,7 @@ export class Contacto {
         formData.append('certificado', this.selectedFile);
       }
 
-      this.http.post('http://localhost:8000/api/users/contact/', formData).subscribe({
+      this.http.post(`${environment.apiUrl}/api/users/contact/`, formData).subscribe({
         next: () => {
           this.submitting = false;
           this.successMessage =

@@ -30,9 +30,14 @@ export interface Producto {
   // HU16 - Reseñas
   averageRating?: number;
   reviewsCount?: number;
+  temporada?: string;
+  fechaDisponibleDesde?: string;
+  fechaDisponibleHasta?: string;
+  permiteReservaFutura?: boolean;
+  activo?: boolean;
 }
 
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-catalogo',
@@ -57,6 +62,7 @@ export class Catalogo implements OnInit {
   newComment = '';
   reviewMessage = '';
   reviewError = '';
+  successMessage = '';
 
   readonly categoriasDisponibles = [
     'Todos',
@@ -84,9 +90,28 @@ export class Catalogo implements OnInit {
     private reviewService: ReviewService,
     private ngZone: NgZone,
     private router: Router,
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit() {
+    this.route.queryParams.subscribe((params) => {
+      if (params['success'] === 'compra') {
+        this.successMessage = 'Compra realizada con éxito. Gracias por confiar en ProviECO.';
+        
+        // Remove query parameters from URL without reloading
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { success: null },
+          queryParamsHandling: 'merge',
+        });
+
+        setTimeout(() => {
+          this.successMessage = '';
+          this.cdr.detectChanges();
+        }, 5000);
+      }
+    });
+
     this.productService.products$.subscribe((data: ApiProduct[]) => {
       this.productos = data.map((item: any) => ({
         id: item.id,
@@ -94,11 +119,26 @@ export class Catalogo implements OnInit {
         origen: item.origin,
         productor: item.ownerName || 'Productor anonimo',
         ownerId: item.ownerId as number,
-        categoria: this.inferirCategoria(item),
+        categoria: (() => {
+          const cat = String(item.categoria || '').trim();
+          if (!cat || cat.toLowerCase() === 'otros') {
+            const inferred = this.inferirCategoria(item);
+            if (inferred !== 'Otros') {
+              return inferred;
+            }
+          }
+          return cat || 'Otros';
+        })(),
         precio: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
         unidad: item.unit,
         disponibilidad: item.quantity,
-        imagenUrl: item.image_url || item.image_url_legacy || 'assets/images/placeholder.png',
+        imagenUrl: (() => {
+          const url = item.image_url || item.image_url_legacy || '';
+          if (!url || url.includes('assets/products/')) {
+            return this.productService.getImageForProduct(item.name, item.categoria || this.inferirCategoria(item));
+          }
+          return url;
+        })(),
         tieneEcoSello: item.verification_status === 'VERIFICADO',
         descripcion: item.description || '',
         certificadoUrl: item.certificate_url,
@@ -110,6 +150,12 @@ export class Catalogo implements OnInit {
         // HU16 - Reseñas
         averageRating: Number(item.average_rating || 0),
         reviewsCount: Number(item.reviews_count || 0),
+
+        temporada: item.temporada || 'Todo el año',
+        fechaDisponibleDesde: item.fecha_disponible_desde,
+        fechaDisponibleHasta: item.fecha_disponible_hasta,
+        permiteReservaFutura: !!item.permite_reserva_futura,
+        activo: item.activo !== false,
       }));
 
       this.loading = false;
@@ -121,6 +167,11 @@ export class Catalogo implements OnInit {
 
   get productosFiltrados(): Producto[] {
     return this.productos.filter((producto) => {
+      if (producto.activo === false) return false;
+
+      // Solo mostrar productos validados (VERIFICADO)
+      if (!producto.tieneEcoSello) return false;
+
       const categoriaValida =
         this.selectedCategoria === 'Todos' || producto.categoria === this.selectedCategoria;
 

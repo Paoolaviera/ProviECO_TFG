@@ -1,18 +1,20 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 import { AdminActionLog, AdminContactMessage, AdminService, AdminUser } from '../services/admin.service';
 import { AuthService } from '../services/auth.service';
 import { ApiProduct } from '../services/product.service';
 
-type AdminTab = 'usuarios' | 'productos' | 'verificaciones' | 'consultas' | 'logs';
+type AdminTab = 'usuarios' | 'productos' | 'verificaciones' | 'consultas' | 'logs' | 'solicitudes_restauracion';
 
 @Component({
   selector: 'app-panel-admin',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './panel-admin.html',
   styleUrl: './panel-admin.css',
 })
@@ -27,9 +29,14 @@ export class PanelAdmin implements OnInit {
   protected contacts: AdminContactMessage[] = [];
   protected logs: AdminActionLog[] = [];
   protected currentUserId: number | string | null = null;
+  
+  // Map to bind validation textareas
+  protected observacionesMap: { [key: number]: string } = {};
+  protected restauracionFilter: 'TODOS' | 'PENDIENTE' | 'VALIDADO' | 'RECHAZADO' = 'TODOS';
 
   protected readonly tabs: { id: AdminTab; label: string }[] = [
     { id: 'usuarios', label: 'Usuarios' },
+    { id: 'solicitudes_restauracion', label: 'Restauración' },
     { id: 'productos', label: 'Productos' },
     { id: 'verificaciones', label: 'Verificaciones' },
     { id: 'consultas', label: 'Consultas' },
@@ -134,7 +141,7 @@ export class PanelAdmin implements OnInit {
     this.clearMessages();
     this.actionLoading = true;
 
-    this.adminService.updateProductVerification(product.id, status).subscribe({
+    this.adminService.updateProductVerification(product.id, status, product.observaciones_admin).subscribe({
       next: (updatedProduct) => {
         this.products = this.products.map((item) => item.id === updatedProduct.id ? updatedProduct : item);
         this.successMessage = 'Estado de verificacion actualizado.';
@@ -166,7 +173,7 @@ export class PanelAdmin implements OnInit {
     });
   }
 
-  protected formatDate(value: string | null): string {
+  protected formatDate(value: string | null | undefined): string {
     if (!value) {
       return 'Sin registro';
     }
@@ -261,6 +268,44 @@ export class PanelAdmin implements OnInit {
     this.actionLoading = false;
     this.errorMessage = error.error?.detail || fallback;
     this.cdr.detectChanges();
+  }
+
+  protected get restauracionUsers(): AdminUser[] {
+    const list = this.users.filter((user) => user.rol === 'RESTAURACION');
+    if (this.restauracionFilter === 'TODOS') {
+      return list;
+    }
+    return list.filter((user) => (user.estado_validacion_centro || 'PENDIENTE') === this.restauracionFilter);
+  }
+
+  protected getDocumentUrl(path?: string): string {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path;
+    }
+    return `${environment.apiUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+  }
+
+  protected procesarCentro(user: AdminUser, estado: 'VALIDADO' | 'RECHAZADO'): void {
+    const observaciones = this.observacionesMap[user.id] || '';
+    if (estado === 'RECHAZADO' && !observaciones.trim()) {
+      alert('Por favor, indica un motivo de rechazo en las observaciones.');
+      return;
+    }
+
+    this.clearMessages();
+    this.actionLoading = true;
+
+    this.adminService.validarCentro(user.id, estado, observaciones).subscribe({
+      next: (updatedUser) => {
+        this.users = this.users.map((u) => u.id === updatedUser.id ? updatedUser : u);
+        this.successMessage = `Centro ${updatedUser.nombre_centro || updatedUser.email} actualizado a ${estado} correctamente.`;
+        this.observacionesMap[user.id] = '';
+        this.reloadLogs();
+        this.finishAction();
+      },
+      error: (error) => this.handleActionError(error, 'No se pudo procesar la solicitud del centro.'),
+    });
   }
 
   private clearMessages(): void {

@@ -353,6 +353,11 @@ h2 {
   color: #9a6a00;
 }
 
+.status-badge.pending-cert {
+  background: rgba(100, 100, 100, 0.14);
+  color: #777777;
+}
+
 .status-badge.verified {
   background: rgba(47, 125, 50, 0.14);
   color: #1f6b24;
@@ -482,3 +487,10 @@ h2 {
 :host-context(body.dark-mode) .feedback.success { background: rgba(102,187,106,0.12); color: #66bb6a; }
 :host-context(body.dark-mode) .feedback.error { background: rgba(244,67,54,0.12); color: #f87171; }
 :host-context(body.dark-mode) .state-message { color: #9e9e9e; }
+
+.btn.active-filter {
+  background: linear-gradient(135deg, var(--primary) 0%, #3f9a4d 100%) !important;
+  color: white !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 4px 10px rgba(47, 125, 50, 0.15);
+}

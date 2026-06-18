@@ -10,7 +10,7 @@ class AuthServiceMock {
   currentUser = {
     id: 99,
     name: 'Admin',
-    email: 'admin@ecomarket.test',
+    email: 'admin@provieco.test',
     rol: 'ADMIN',
   };
 
@@ -29,7 +29,7 @@ describe('PanelAdmin', () => {
         {
           id: 1,
           username: 'cliente',
-          email: 'cliente@ecomarket.test',
+          email: 'cliente@provieco.test',
           first_name: 'Cliente',
           last_name: 'Eco',
           full_name: 'Cliente Eco',
@@ -46,7 +46,7 @@ describe('PanelAdmin', () => {
         {
           id: 10,
           nombre: 'Cliente Eco',
-          email: 'cliente@ecomarket.test',
+          email: 'cliente@provieco.test',
           motivo: 'Quiero ser productor',
           mensaje: 'Quiero vender productos ecologicos.',
           created_at: '2026-05-18T11:00:00Z',
@@ -56,7 +56,7 @@ describe('PanelAdmin', () => {
       updateUserRole: vi.fn().mockReturnValue(of({
         id: 1,
         username: 'cliente',
-        email: 'cliente@ecomarket.test',
+        email: 'cliente@provieco.test',
         first_name: 'Cliente',
         last_name: 'Eco',
         full_name: 'Cliente Eco',
@@ -100,6 +100,6 @@ describe('PanelAdmin', () => {
     fixture.detectChanges();
 
     expect(adminService.updateUserRole).toHaveBeenCalledWith(1, 'PRODUCTOR');
-    expect(fixture.nativeElement.textContent).toContain('cliente@ecomarket.test ahora es productor.');
+    expect(fixture.nativeElement.textContent).toContain('cliente@provieco.test ahora es productor.');
   });
 });

@@ -17,7 +17,7 @@ class ProductTests(TestCase):
         producto = Producto.objects.create(
             owner=self.user,
             name='Manzanas Ecologicas',
-            origin='Canarias',
+            origin='Las Palmas',
             price=2.50,
             unit='kg',
             quantity=100

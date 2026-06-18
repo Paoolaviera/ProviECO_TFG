@@ -27,12 +27,14 @@ export interface ProducerProfile {
   reviews: Review[];
 }
 
+import { environment } from '../../environments/environment';
+
 @Injectable({
   providedIn: 'root',
 })
 export class ReviewService {
-  private apiUrl = 'http://127.0.0.1:8000/api/reviews/';
-  private usersApiUrl = 'http://127.0.0.1:8000/api/users/';
+  private apiUrl = `${environment.apiUrl}/api/reviews/`;
+  private usersApiUrl = `${environment.apiUrl}/api/users/`;
 
   constructor(private http: HttpClient) {}
 

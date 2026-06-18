@@ -5,12 +5,43 @@ class CustomUser(AbstractUser):
     ROLE_CHOICES = (
         ('CLIENTE', 'Cliente'),
         ('PRODUCTOR', 'Productor'),
+        ('RESTAURACION', 'Restauración Colectiva'),
     )
     rol = models.CharField(max_length=20, choices=ROLE_CHOICES, default='CLIENTE')
     email = models.EmailField(unique=True)
     telefono = models.CharField(max_length=20, blank=True, null=True)
     direccion = models.CharField(max_length=160, blank=True, null=True)
     provincia = models.CharField(max_length=100, blank=True, null=True)
+    
+    nombre_centro = models.CharField(max_length=150, blank=True, null=True)
+    tipo_centro = models.CharField(
+        max_length=20,
+        choices=(
+            ('COLEGIO', 'Colegio'),
+            ('HOSPITAL', 'Hospital'),
+            ('RESIDENCIA', 'Residencia'),
+            ('COMEDOR', 'Comedor'),
+            ('OTRO', 'Otro'),
+        ),
+        blank=True,
+        null=True
+    )
+    persona_responsable = models.CharField(max_length=150, blank=True, null=True)
+    observaciones_centro = models.TextField(blank=True, null=True)
+    
+    documento_centro = models.FileField(upload_to='documentos_centros/', blank=True, null=True)
+    estado_validacion_centro = models.CharField(
+        max_length=20,
+        choices=(
+            ('PENDIENTE', 'Pendiente'),
+            ('VALIDADO', 'Validado'),
+            ('RECHAZADO', 'Rechazado'),
+        ),
+        default='PENDIENTE'
+    )
+    fecha_subida_documento = models.DateTimeField(blank=True, null=True)
+    fecha_validacion_centro = models.DateTimeField(blank=True, null=True)
+    observaciones_validacion_admin = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.username} ({self.rol})"

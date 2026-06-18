@@ -4,6 +4,8 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Producto } from '../catalogo/catalogo';
 import { AuthService } from './auth.service';
+import { ProductService } from './product.service';
+import { environment } from '../../environments/environment';
 
 export interface CartItem {
   id?: number;
@@ -17,7 +19,7 @@ export interface CartItem {
 export class CartService {
   private cartItems: CartItem[] = [];
   private cartSubject = new BehaviorSubject<CartItem[]>([]);
-  private apiUrl = 'http://localhost:8000/api/cart/';
+  private apiUrl = `${environment.apiUrl}/api/cart/`;
 
   public cart$ = this.cartSubject.asObservable();
 
@@ -25,6 +27,7 @@ export class CartService {
     private http: HttpClient,
     private authService: AuthService,
     private router: Router,
+    private productService: ProductService,
   ) {
     this.authService.session$.subscribe((session) => {
       if (session) {
@@ -53,7 +56,13 @@ export class CartService {
             nombre: producto?.nombre || producto?.name || producto?.titulo || '',
             precio: Number(producto?.precio || producto?.price || 0),
             unidad: producto?.unidad || producto?.unit || '',
-            imagenUrl: producto?.imagenUrl || producto?.image_url || producto?.image_url_legacy || 'assets/images/placeholder.png',
+            imagenUrl: (() => {
+              const url = producto?.imagenUrl || producto?.image_url || producto?.image_url_legacy || '';
+              if (!url || url.includes('assets/products/')) {
+                return this.productService.getImageForProduct(producto?.nombre || producto?.name || producto?.titulo, producto?.categoria);
+              }
+              return url;
+            })(),
           },
           cantidad: Number(item.cantidad || item.quantity || 1),
         };
@@ -147,5 +156,15 @@ export class CartService {
     return firstValueFrom(
       this.http.post<{ recipe_html: string }>(`${this.apiUrl}generate_recipe/`, {})
     );
+  }
+
+  private getDefaultImageForCategory(category?: string): string {
+    const cat = String(category || '').trim().toLowerCase();
+    if (cat.includes('fruta')) return 'assets/products/manzanas.jpg';
+    if (cat.includes('verdura')) return 'assets/products/calabacines.jpg';
+    if (cat.includes('lacteo') || cat.includes('lácteo')) return 'assets/products/queso.jpg';
+    if (cat.includes('huevo')) return 'assets/products/huevos.jpg';
+    if (cat.includes('miel')) return 'assets/products/miel.jpg';
+    return 'assets/products/producto-local.jpg';
   }
 }

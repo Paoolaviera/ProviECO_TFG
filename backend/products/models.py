@@ -54,12 +54,43 @@ class Producto(models.Model):
     fecha_cosecha = models.DateField(blank=True, null=True)
     finca_origen = models.CharField(max_length=150, blank=True, null=True)
     qr_image = models.ImageField(upload_to='qr/', blank=True, null=True)
+    
+    categoria = models.CharField(
+        max_length=50,
+        choices=(
+            ('Frutas', 'Frutas'),
+            ('Verduras', 'Verduras'),
+            ('Lacteos', 'Lácteos'),
+            ('Huevos', 'Huevos'),
+            ('Miel', 'Miel'),
+            ('Bebidas', 'Bebidas'),
+            ('Conservas', 'Conservas'),
+            ('Otros', 'Otros'),
+        ),
+        default='Otros'
+    )
+    temporada = models.CharField(
+        max_length=50,
+        choices=(
+            ('Primavera', 'Primavera'),
+            ('Verano', 'Verano'),
+            ('Otoño', 'Otoño'),
+            ('Invierno', 'Invierno'),
+            ('Todo el año', 'Todo el año'),
+        ),
+        default='Todo el año'
+    )
+    fecha_disponible_desde = models.DateField(blank=True, null=True)
+    fecha_disponible_hasta = models.DateField(blank=True, null=True)
+    permite_reserva_futura = models.BooleanField(default=False)
+    activo = models.BooleanField(default=True)
 
     verification_status = models.CharField(
         max_length=20,
         choices=ESTADO_VERIFICACION_CHOICES,
         default='PENDIENTE'
     )
+    observaciones_admin = models.TextField(blank=True, null=True)
 
     # Legacy field kept for backward compatibility with seed data
     image_url_legacy = models.TextField(blank=True, null=True)

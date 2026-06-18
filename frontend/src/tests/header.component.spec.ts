@@ -65,7 +65,7 @@ describe('HeaderComponent', () => {
     authService.setSession({
       id: 1,
       name: 'Admin',
-      email: 'admin@ecomarket.test',
+      email: 'admin@provieco.test',
       rol: 'ADMIN',
     });
     fixture.detectChanges();
@@ -82,7 +82,7 @@ describe('HeaderComponent', () => {
     authService.setSession({
       id: 2,
       name: 'Staff',
-      email: 'staff@ecomarket.test',
+      email: 'staff@provieco.test',
       rol: 'CLIENTE',
       is_staff: true,
     });
@@ -95,7 +95,7 @@ describe('HeaderComponent', () => {
     authService.setSession({
       id: 3,
       name: 'Productor',
-      email: 'productor@ecomarket.test',
+      email: 'productor@provieco.test',
       rol: 'PRODUCTOR',
     });
     fixture.detectChanges();

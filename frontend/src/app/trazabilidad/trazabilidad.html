@@ -1,35 +1,172 @@
-<section class="trazabilidad-page">
-  @if (loading) {
-    <p class="loading">Cargando trazabilidad...</p>
-  }
+<div class="trazabilidad-page-container">
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Cargando información de trazabilidad...</p>
+  </div>
 
-  @if (!loading && error) {
-    <p class="error">{{ error }}</p>
-  }
+  <div *ngIf="!loading && error" class="error-card">
+    <i class="fa-solid fa-circle-exclamation error-icon"></i>
+    <h2>Trazabilidad no disponible</h2>
+    <p>{{ error }}</p>
+    <a routerLink="/" class="btn btn-secondary">Volver al Inicio</a>
+  </div>
 
-  @if (!loading && producto) {
-    <div class="trazabilidad-card">
-      <h1>Trazabilidad del producto</h1>
+  <div *ngIf="!loading && producto" class="trazabilidad-card">
+    <header class="card-header">
+      <span class="badge-tag"><i class="fa-solid fa-leaf"></i> Producto de Cercanía</span>
+      <h1>Trazabilidad de Cosecha</h1>
+      <p class="subtitle">Transparencia y garantía de origen agroecológico</p>
+    </header>
 
-      <h2>{{ producto.nombre }}</h2>
+    <div class="card-body">
+      <div class="main-info">
+        <h2 class="product-title">{{ producto.nombre }}</h2>
+        
+        <div class="info-grid">
+          <div class="info-item">
+            <i class="fa-solid fa-user-large icon-green"></i>
+            <div>
+              <span class="label">Productor</span>
+              <span class="val">{{ producto.productor }}</span>
+            </div>
+          </div>
 
-      <div class="info-box">
-        <p><strong>Productor:</strong> {{ producto.productor }}</p>
-        <p><strong>Origen:</strong> {{ producto.origen }}</p>
-        <p><strong>Finca de origen:</strong> {{ producto.finca_origen || 'No especificada' }}</p>
-        <p><strong>Lote:</strong> {{ producto.lote || 'No especificado' }}</p>
-        <p><strong>Fecha de cosecha:</strong> {{ producto.fecha_cosecha || 'No especificada' }}</p>
+          <div class="info-item">
+            <i class="fa-solid fa-location-dot icon-green"></i>
+            <div>
+              <span class="label">Provincia</span>
+              <span class="val">{{ producto.origen }}</span>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <i class="fa-solid fa-mountain-sun icon-green"></i>
+            <div>
+              <span class="label">Finca / Parcela</span>
+              <span class="val">{{ producto.finca_origen || 'No especificada' }}</span>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <i class="fa-solid fa-barcode icon-green"></i>
+            <div>
+              <span class="label">Número de Lote</span>
+              <span class="val font-mono">{{ producto.lote || 'No asignado' }}</span>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <i class="fa-solid fa-calendar-day icon-green"></i>
+            <div>
+              <span class="label">Fecha de Recolección</span>
+              <span class="val">{{ producto.fecha_cosecha || 'No especificada' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <a *ngIf="producto.certificado" [href]="producto.certificado" target="_blank" class="btn-cert">
+            <i class="fa-solid fa-file-pdf"></i> Ver certificado ecológico
+          </a>
+          <span *ngIf="!producto.certificado" class="no-cert" style="font-size: 13px; color: var(--text-muted);">
+            <i class="fa-solid fa-ban"></i> Certificado no disponible
+          </span>
+        </div>
       </div>
 
-      @if (producto.certificado) {
-        <a
-          [href]="producto.certificado"
-          target="_blank"
-          class="certificado-btn"
-        >
-          Ver certificado ecológico
-        </a>
-      }
+      <!-- Pedido Planificado y Suministro Colectivo -->
+      <div class="order-trace-section">
+        <h3><i class="fa-solid fa-truck-ramp-box"></i> Suministro y Destino</h3>
+        
+        <div class="info-grid" *ngIf="producto.order_id; else noOrderTrace">
+          <div class="info-item">
+            <i class="fa-solid fa-hotel icon-green"></i>
+            <div>
+              <span class="label">Centro Destinatario</span>
+              <span class="val">{{ producto.centro_destinatario || 'No disponible' }}</span>
+            </div>
+          </div>
+          
+          <div class="info-item">
+            <i class="fa-solid fa-calendar-check icon-green"></i>
+            <div>
+              <span class="label">Fecha Prevista de Entrega</span>
+              <span class="val">{{ producto.fecha_entrega_prevista || 'No disponible' }}</span>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <i class="fa-solid fa-clock-rotate-left icon-green"></i>
+            <div>
+              <span class="label">Estado de Suministro</span>
+              <span class="val">{{ producto.estado_suministro || 'No disponible' }}</span>
+            </div>
+          </div>
+
+          <div class="info-item" *ngIf="producto.frecuencia">
+            <i class="fa-solid fa-repeat icon-green"></i>
+            <div>
+              <span class="label">Frecuencia de EcoBox</span>
+              <span class="val">{{ producto.frecuencia }}</span>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #noOrderTrace>
+          <div class="info-grid">
+            <div class="info-item">
+              <i class="fa-solid fa-hotel icon-green"></i>
+              <div>
+                <span class="label">Centro Destinatario</span>
+                <span class="val" style="color: var(--text-muted); font-style: italic;">No disponible (Búsqueda general)</span>
+              </div>
+            </div>
+            
+            <div class="info-item">
+              <i class="fa-solid fa-calendar-check icon-green"></i>
+              <div>
+                <span class="label">Fecha Prevista de Entrega</span>
+                <span class="val" style="color: var(--text-muted); font-style: italic;">No disponible (Búsqueda general)</span>
+              </div>
+            </div>
+
+            <div class="info-item">
+              <i class="fa-solid fa-clock-rotate-left icon-green"></i>
+              <div>
+                <span class="label">Estado de Suministro</span>
+                <span class="val" style="color: var(--text-muted); font-style: italic;">No disponible (Búsqueda general)</span>
+              </div>
+            </div>
+          </div>
+        </ng-template>
+
+        <div class="timeline-container" *ngIf="producto.order_id && getTimelineSteps().length > 0">
+          <h4 style="margin-bottom: 16px; font-weight: 600;">Línea Temporal de Suministro</h4>
+          <div class="timeline-flow">
+            <div class="timeline-step" *ngFor="let step of getTimelineSteps(); let i = index" 
+                 [style.opacity]="step.completed || step.current ? '1' : '0.5'">
+              <!-- Circle marker -->
+              <div class="marker" [style.background-color]="step.current ? 'var(--primary-color)' : (step.completed ? '#4caf50' : '#ccc')"></div>
+              <div>
+                <strong [style.color]="step.current ? 'var(--primary-color)' : 'inherit'">{{ step.title }}</strong>
+                <p>{{ step.desc }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="qr-sidebar" *ngIf="producto.qr_url">
+        <h3>Código QR del Lote</h3>
+        <p class="qr-desc">Escanea este código desde cualquier dispositivo móvil para consultar la procedencia de esta cosecha.</p>
+        <div class="qr-container">
+          <img [src]="producto.qr_url" alt="QR Trazabilidad" />
+        </div>
+      </div>
     </div>
-  }
-</section>
+
+    <footer class="card-footer">
+      <p>🌱 ProviECO — Comprometidos con el desarrollo rural local y sostenible.</p>
+    </footer>
+  </div>
+</div>

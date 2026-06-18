@@ -11,6 +11,15 @@ export interface SessionData {
   provincia?: string;
   is_staff?: boolean;
   is_superuser?: boolean;
+  nombre_centro?: string;
+  tipo_centro?: string;
+  persona_responsable?: string;
+  telefono?: string;
+  direccion?: string;
+  observaciones_centro?: string;
+  documento_centro?: string;
+  estado_validacion_centro?: string;
+  observaciones_validacion_admin?: string;
 }
 
 export interface UserPreferences {
@@ -19,11 +28,14 @@ export interface UserPreferences {
   notifications_enabled: boolean;
 }
 
+import { environment } from '../../environments/environment';
+
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:8000/api/users';
+  private apiUrl = `${environment.apiUrl}/api/users`;
+  private storage = sessionStorage;
   private sessionSubject = new BehaviorSubject<SessionData | null>(this.getSessionFromStorage());
   public session$ = this.sessionSubject.asObservable();
 
@@ -34,7 +46,7 @@ export class AuthService {
 
   private getSessionFromStorage(): SessionData | null {
     try {
-      const data = localStorage.getItem('ecomarket_session');
+      const data = this.storage.getItem('provieco_session');
       return data ? JSON.parse(data) : null;
     } catch {
       return null;
@@ -46,7 +58,7 @@ export class AuthService {
   }
 
   getToken(): string | null {
-    return localStorage.getItem('ecomarket_token');
+    return this.storage.getItem('provieco_token');
   }
 
   get isAdmin(): boolean {
@@ -58,13 +70,13 @@ export class AuthService {
     return this.http.post<any>(`${this.apiUrl}/login/`, credentials).pipe(
       tap(response => {
         if (response.access && response.user) {
-          localStorage.setItem('ecomarket_token', response.access);
-          localStorage.setItem('ecomarket_session', JSON.stringify(response.user));
+          this.storage.setItem('provieco_token', response.access);
+          this.storage.setItem('provieco_session', JSON.stringify(response.user));
           this.sessionSubject.next(response.user);
 
           // Save and apply preferences from login response
           if (response.preferences) {
-            localStorage.setItem('ecomarket_preferences', JSON.stringify(response.preferences));
+            this.storage.setItem('provieco_preferences', JSON.stringify(response.preferences));
             this.applyPreferences(response.preferences);
           }
         }
@@ -77,9 +89,9 @@ export class AuthService {
   }
 
   logout(): void {
-    localStorage.removeItem('ecomarket_token');
-    localStorage.removeItem('ecomarket_session');
-    localStorage.removeItem('ecomarket_preferences');
+    this.storage.removeItem('provieco_token');
+    this.storage.removeItem('provieco_session');
+    this.storage.removeItem('provieco_preferences');
     this.sessionSubject.next(null);
     this.clearPreferences();
     this.router.navigate(['/login']);
@@ -89,7 +101,7 @@ export class AuthService {
     const currentSession = this.currentUser;
     if (currentSession) {
       const updatedSession = { ...currentSession, ...newData };
-      localStorage.setItem('ecomarket_session', JSON.stringify(updatedSession));
+      this.storage.setItem('provieco_session', JSON.stringify(updatedSession));
       this.sessionSubject.next(updatedSession);
     }
   }
@@ -99,9 +111,9 @@ export class AuthService {
    * Se usa al arrancar la app para garantizar un inicio limpio.
    */
   silentLogout(): void {
-    localStorage.removeItem('ecomarket_token');
-    localStorage.removeItem('ecomarket_session');
-    localStorage.removeItem('ecomarket_preferences');
+    this.storage.removeItem('provieco_token');
+    this.storage.removeItem('provieco_session');
+    this.storage.removeItem('provieco_preferences');
     this.sessionSubject.next(null);
     this.clearPreferences();
   }
@@ -128,13 +140,13 @@ export class AuthService {
   }
 
   savePreferencesLocally(prefs: UserPreferences): void {
-    localStorage.setItem('ecomarket_preferences', JSON.stringify(prefs));
+    this.storage.setItem('provieco_preferences', JSON.stringify(prefs));
     this.applyPreferences(prefs);
   }
 
   private applyStoredPreferences(): void {
     try {
-      const stored = localStorage.getItem('ecomarket_preferences');
+      const stored = this.storage.getItem('provieco_preferences');
       if (stored) {
         const prefs: UserPreferences = JSON.parse(stored);
         this.applyPreferences(prefs);

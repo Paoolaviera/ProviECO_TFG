@@ -11,10 +11,10 @@
     </button>
 
     <a class="logo-section" routerLink="/">
-      <img class="logo-img" src="assets/images/logo.jpg" alt="EcoMarket" height="736" width="736" />
+      <img class="logo-img" src="assets/provieco-logo.png" alt="ProviECO" height="736" width="736" />
       <div class="logo-text">
-        <h1>EcoMarket</h1>
-        <p>Sabor local, raíz ecológica</p>
+        <h1>ProviECO</h1>
+        <p>Provisión local, gestión sostenible</p>
       </div>
     </a>
 
@@ -33,6 +33,10 @@
           <!-- Sección Productor -->
           @if (session.rol === 'PRODUCTOR') {
             <li><a routerLink="/panel-productor" routerLinkActive="active">Panel Productor</a></li>
+          }
+          <!-- Sección Restauración Colectiva -->
+          @if (session.rol === 'RESTAURACION') {
+            <li><a routerLink="/restauracion" routerLinkActive="active">Restauración Colectiva</a></li>
           }
         }
 

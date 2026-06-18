@@ -8,17 +8,19 @@ import {
   ViewChild,
   inject,
 } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Subscription } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 
 import { AuthService } from '../services/auth.service';
 import { ImageCompressionService } from '../services/image-compression.service';
 import { ApiProduct, ProductService } from '../services/product.service';
+import { OrderService } from '../services/order.service';
 import { PROVINCIAS_ESPANA } from '../shared/provincias';
 
 @Component({
   selector: 'app-panel-productor',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './panel-productor.html',
   styleUrl: './panel-productor.css',
 })
@@ -29,6 +31,7 @@ export class PanelProductor implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly productService = inject(ProductService);
+  private readonly orderService = inject(OrderService);
   private readonly imageCompressor = inject(ImageCompressionService);
   private readonly cdr = inject(ChangeDetectorRef);
 
@@ -41,7 +44,7 @@ export class PanelProductor implements OnInit, OnDestroy {
         <rect width="320" height="200" rx="18" fill="#edf7ee"/>
         <circle cx="108" cy="82" r="26" fill="#9ccc9f"/>
         <path d="M44 160c18-34 44-50 78-50 28 0 53 14 76 43 11-13 26-20 43-20 29 0 53 17 70 27v0H44z" fill="#58a55c"/>
-        <text x="160" y="182" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#2f6f35">EcoMarket</text>
+        <text x="160" y="182" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#2f6f35">ProviECO</text>
       </svg>
     `);
 
@@ -61,6 +64,21 @@ export class PanelProductor implements OnInit, OnDestroy {
   protected editingProductId: number | string | null = null;
   protected products: Product[] = [];
 
+  // State variables for producer planned order requests
+  protected producerRequests: any[] = [];
+  protected loadingRequests = false;
+  protected requestSuccessMessage = '';
+  protected requestErrorMessage = '';
+  protected requestFilter = 'TODAS';
+  protected showRejectModal = false;
+  protected selectedRequestForReject: any = null;
+  protected observacionesRechazo = '';
+
+  // State variables for producer calendar
+  protected producerCalendar: any[] = [];
+  protected loadingCalendar = false;
+  protected calendarFilter = 'TODAS';
+
   protected readonly productForm = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(80)]],
     origin: ['', [Validators.required, Validators.maxLength(80)]],
@@ -68,6 +86,15 @@ export class PanelProductor implements OnInit, OnDestroy {
     unit: ['EUR/kg', Validators.required],
     description: ['', [Validators.required, Validators.maxLength(300)]],
     quantity: [0, [Validators.required, Validators.min(0)]],
+    categoria: ['Otros', Validators.required],
+    temporada: ['Todo el año', Validators.required],
+    fecha_disponible_desde: [''],
+    fecha_disponible_hasta: [''],
+    permite_reserva_futura: [false],
+    activo: [true],
+    lote: [''],
+    fecha_cosecha: [''],
+    finca_origen: [''],
   });
 
   /** Compressed File ready to upload, or null if none selected. */
@@ -104,6 +131,12 @@ export class PanelProductor implements OnInit, OnDestroy {
           image: p.image_url || p.image_url_legacy || '',
           certificate_url: p.certificate_url,
           verification_status: p.verification_status || 'PENDIENTE',
+          categoria: p.categoria || 'Otros',
+          temporada: p.temporada || 'Todo el año',
+          fecha_disponible_desde: p.fecha_disponible_desde || '',
+          fecha_disponible_hasta: p.fecha_disponible_hasta || '',
+          permite_reserva_futura: p.permite_reserva_futura || false,
+          activo: p.activo !== false,
         }));
 
       this.loading = false;
@@ -111,6 +144,8 @@ export class PanelProductor implements OnInit, OnDestroy {
     });
 
     this.productService.refreshProducts();
+    this.loadProducerRequests();
+    this.loadProducerCalendar();
   }
 
   ngOnDestroy(): void {
@@ -163,6 +198,15 @@ export class PanelProductor implements OnInit, OnDestroy {
       unit: formValue.unit,
       description: formValue.description.trim(),
       quantity: Number(formValue.quantity),
+      categoria: formValue.categoria,
+      temporada: formValue.temporada,
+      fecha_disponible_desde: formValue.fecha_disponible_desde || undefined,
+      fecha_disponible_hasta: formValue.fecha_disponible_hasta || undefined,
+      permite_reserva_futura: !!formValue.permite_reserva_futura,
+      activo: !!formValue.activo,
+      lote: formValue.lote.trim() || undefined,
+      fecha_cosecha: formValue.fecha_cosecha || undefined,
+      finca_origen: formValue.finca_origen.trim() || undefined,
     };
 
     // Only attach image / certificate if the user selected a new file.
@@ -182,7 +226,7 @@ export class PanelProductor implements OnInit, OnDestroy {
       } else {
         await this.productService.createProduct(payload);
         this.successMessage =
-          'Producto añadido correctamente. Queda pendiente de verificación por el administrador.';
+          'Producto enviado para validación. Aparecerá en el catálogo cuando el administrador lo apruebe.';
       }
 
       this.resetForm();
@@ -215,6 +259,15 @@ export class PanelProductor implements OnInit, OnDestroy {
       unit: product.unit ?? 'EUR/kg',
       description: product.description ?? '',
       quantity: Number(product.quantity ?? 0),
+      categoria: product.categoria ?? 'Otros',
+      temporada: product.temporada ?? 'Todo el año',
+      fecha_disponible_desde: product.fecha_disponible_desde ?? '',
+      fecha_disponible_hasta: product.fecha_disponible_hasta ?? '',
+      permite_reserva_futura: !!product.permite_reserva_futura,
+      activo: product.activo !== false,
+      lote: product.lote ?? '',
+      fecha_cosecha: product.fecha_cosecha ?? '',
+      finca_origen: product.finca_origen ?? '',
     });
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -363,18 +416,24 @@ export class PanelProductor implements OnInit, OnDestroy {
     return product.image || this.placeholderImage;
   }
 
-  protected getStatusLabel(status?: string): string {
+  protected getStatusLabel(product: any): string {
+    const status = product.verification_status;
     switch (status) {
       case 'VERIFICADO':
-        return 'Verificado';
+        return 'Producto validado';
       case 'RECHAZADO':
-        return 'Rechazado';
+        return 'Producto rechazado';
       default:
-        return 'Pendiente';
+        return 'Pendiente de validación';
     }
   }
 
-  protected getStatusClass(status?: string): string {
+  protected getStatusClass(product: any): string {
+    const status = product.verification_status;
+    const hasCert = !!(product.certificate || product.certificate_url);
+    if (!hasCert) {
+      return 'status-badge pending-cert';
+    }
     switch (status) {
       case 'VERIFICADO':
         return 'status-badge verified';
@@ -393,6 +452,15 @@ export class PanelProductor implements OnInit, OnDestroy {
       unit: 'EUR/kg',
       description: '',
       quantity: 0,
+      categoria: 'Otros',
+      temporada: 'Todo el año',
+      fecha_disponible_desde: '',
+      fecha_disponible_hasta: '',
+      permite_reserva_futura: false,
+      activo: true,
+      lote: '',
+      fecha_cosecha: '',
+      finca_origen: '',
     });
 
     this.editingProductId = null;
@@ -414,6 +482,171 @@ export class PanelProductor implements OnInit, OnDestroy {
     this.successMessage = '';
     this.errorMessage = '';
   }
+
+  protected loadProducerRequests(): void {
+    this.loadingRequests = true;
+    this.requestSuccessMessage = '';
+    this.requestErrorMessage = '';
+    this.orderService.getProducerRequests()
+      .pipe(finalize(() => {
+        this.loadingRequests = false;
+        this.cdr.detectChanges();
+      }))
+      .subscribe({
+        next: (data) => {
+          this.producerRequests = data;
+        },
+        error: (err) => {
+          console.error('Error loading producer requests:', err);
+          this.requestErrorMessage = 'Error al cargar las solicitudes de suministro.';
+        }
+      });
+  }
+
+  protected setRequestFilter(filter: string): void {
+    this.requestFilter = filter;
+  }
+
+  protected get filteredRequests(): any[] {
+    if (this.requestFilter === 'TODAS') {
+      return this.producerRequests;
+    }
+    return this.producerRequests.filter(req => req.estado_productor === this.requestFilter);
+  }
+
+  protected acceptRequest(id: number): void {
+    this.requestSuccessMessage = '';
+    this.requestErrorMessage = '';
+    this.orderService.acceptProducerRequest(id).subscribe({
+      next: () => {
+        this.requestSuccessMessage = 'Solicitud aceptada correctamente.';
+        this.loadProducerRequests();
+        this.loadProducerCalendar();
+      },
+      error: (err) => {
+        console.error('Error accepting request:', err);
+        this.requestErrorMessage = err.error?.detail || err.error?.message || 'No se pudo aceptar la solicitud.';
+      }
+    });
+  }
+
+  protected openRejectModal(req: any): void {
+    this.selectedRequestForReject = req;
+    this.observacionesRechazo = '';
+    this.showRejectModal = true;
+  }
+
+  protected closeRejectModal(): void {
+    this.showRejectModal = false;
+    this.selectedRequestForReject = null;
+    this.observacionesRechazo = '';
+  }
+
+  protected rejectRequest(): void {
+    if (!this.selectedRequestForReject) return;
+    this.requestSuccessMessage = '';
+    this.requestErrorMessage = '';
+    
+    this.orderService.rejectProducerRequest(this.selectedRequestForReject.id, {
+      observaciones_productor: this.observacionesRechazo
+    }).subscribe({
+      next: () => {
+        this.requestSuccessMessage = 'Solicitud rechazada.';
+        this.closeRejectModal();
+        this.loadProducerRequests();
+        this.loadProducerCalendar();
+      },
+      error: (err) => {
+        console.error('Error rejecting request:', err);
+        this.requestErrorMessage = err.error?.detail || err.error?.message || 'No se pudo rechazar la solicitud.';
+        this.closeRejectModal();
+      }
+    });
+  }
+
+  protected loadProducerCalendar(): void {
+    this.loadingCalendar = true;
+    this.orderService.getProducerCalendar()
+      .pipe(finalize(() => {
+        this.loadingCalendar = false;
+        this.cdr.detectChanges();
+      }))
+      .subscribe({
+        next: (data) => {
+          this.producerCalendar = data;
+        },
+        error: (err) => {
+          console.error('Error loading producer calendar:', err);
+        }
+      });
+  }
+
+  protected setCalendarFilter(filter: string): void {
+    this.calendarFilter = filter;
+  }
+
+  protected get filteredCalendar(): any[] {
+    if (!this.producerCalendar) return [];
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const maxDate = new Date(now);
+    if (this.calendarFilter === 'PROXIMOS_7') {
+      maxDate.setDate(now.getDate() + 7);
+    } else if (this.calendarFilter === 'PROXIMOS_30') {
+      maxDate.setDate(now.getDate() + 30);
+    }
+
+    return this.producerCalendar
+      .map(group => {
+        const groupDate = new Date(group.fecha);
+        groupDate.setHours(0, 0, 0, 0);
+
+        const filteredEntregas = group.entregas.filter((ent: any) => {
+          if (this.calendarFilter === 'PENDIENTES' && ent.estado !== 'PENDIENTE') {
+            return false;
+          }
+          if (this.calendarFilter === 'ACEPTADAS' && ent.estado !== 'ACEPTADO' && ent.estado !== 'ACEPTADA' && ent.estado !== 'EN_PREPARACION') {
+            return false;
+          }
+
+          if (this.calendarFilter === 'PROXIMOS_7' || this.calendarFilter === 'PROXIMOS_30') {
+            return groupDate >= now && groupDate <= maxDate;
+          }
+
+          return true;
+        });
+
+        return {
+          ...group,
+          entregas: filteredEntregas
+        };
+      })
+      .filter(group => group.entregas.length > 0);
+  }
+
+  protected getLineStatusLabel(status: string): string {
+    switch (status) {
+      case 'PENDIENTE': return 'Pendiente';
+      case 'ACEPTADO': return 'Aceptada';
+      case 'RECHAZADO': return 'Rechazada';
+      case 'EN_PREPARACION': return 'En preparación';
+      case 'ENTREGADO': return 'Entregada';
+      default: return status || 'Pendiente';
+    }
+  }
+
+  protected getLineStatusClass(status: string): string {
+    switch (status) {
+      case 'PENDIENTE': return 'status-badge pending';
+      case 'ACEPTADO': return 'status-badge verified';
+      case 'RECHAZADO': return 'status-badge rejected';
+      case 'EN_PREPARACION': return 'status-badge pending';
+      case 'ENTREGADO': return 'status-badge verified';
+      default: return 'status-badge pending';
+    }
+  }
 }
 
 interface Product {
@@ -430,4 +663,14 @@ interface Product {
   certificate?: string;
   certificate_url?: string;
   verification_status?: string;
+  observaciones_admin?: string;
+  categoria?: string;
+  temporada?: string;
+  fecha_disponible_desde?: string;
+  fecha_disponible_hasta?: string;
+  permite_reserva_futura?: boolean;
+  activo?: boolean;
+  lote?: string;
+  fecha_cosecha?: string;
+  finca_origen?: string;
 }

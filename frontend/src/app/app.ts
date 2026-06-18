@@ -11,11 +11,5 @@ import { AuthService } from './services/auth.service';
   styleUrl: './app.css',
 })
 export class App {
-  protected readonly title = signal('EcoMarket_Sprint1');
-
-  constructor(private authService: AuthService) {
-    // Siempre arrancamos sin sesión para evitar tokens expirados
-    // que bloqueen la carga del catálogo.
-    this.authService.silentLogout();
-  }
+  protected readonly title = signal('ProviECO');
 }

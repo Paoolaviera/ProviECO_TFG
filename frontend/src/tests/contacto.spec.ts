@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 
 import { Contacto } from '../app/contacto/contacto';
+import { environment } from '../environments/environment';
 
 describe('Contacto', () => {
   let fixture: ComponentFixture<Contacto>;
@@ -31,16 +32,16 @@ describe('Contacto', () => {
   it('envia el motivo de alta como productor al backend', () => {
     component.contactoForm.setValue({
       nombre: 'Cliente Eco',
-      email: 'cliente@ecomarket.test',
+      email: 'cliente@provieco.test',
       motivo: 'Quiero ser productor',
       mensaje: 'Quiero vender productos ecologicos.',
     });
 
     component.onSubmit();
 
-    const request = httpMock.expectOne('http://localhost:8000/api/users/contact/');
+    const request = httpMock.expectOne(`${environment.apiUrl}/api/users/contact/`);
     expect(request.request.method).toBe('POST');
-    expect(request.request.body.get('email')).toBe('cliente@ecomarket.test');
+    expect(request.request.body.get('email')).toBe('cliente@provieco.test');
     expect(request.request.body.get('motivo')).toBe('Quiero ser productor');
 
     request.flush({ id: 1 });
@@ -50,14 +51,14 @@ describe('Contacto', () => {
   it('muestra el error del backend si el email no existe para alta de productor', () => {
     component.contactoForm.setValue({
       nombre: 'Sin Cuenta',
-      email: 'sin-cuenta@ecomarket.test',
+      email: 'sin-cuenta@provieco.test',
       motivo: 'Quiero ser productor',
       mensaje: 'Quiero vender productos ecologicos.',
     });
 
     component.onSubmit();
 
-    const request = httpMock.expectOne('http://localhost:8000/api/users/contact/');
+    const request = httpMock.expectOne(`${environment.apiUrl}/api/users/contact/`);
     request.flush(
       { email: ['Para solicitar el alta como productor primero debes tener una cuenta registrada.'] },
       { status: 400, statusText: 'Bad Request' },

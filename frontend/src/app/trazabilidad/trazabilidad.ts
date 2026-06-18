@@ -11,7 +11,15 @@ interface TrazabilidadProducto {
   finca_origen: string | null;
   fecha_cosecha: string | null;
   certificado: string | null;
+  qr_url: string | null;
   productor: string;
+  order_id?: number | null;
+  fecha_entrega_prevista?: string | null;
+  centro_destinatario?: string | null;
+  estado_suministro?: string | null;
+  respuesta_productor?: string | null;
+  frecuencia?: string | null;
+  tipo_pedido?: string | null;
 }
 
 @Component({
@@ -45,7 +53,11 @@ export class TrazabilidadComponent implements OnInit {
       return;
     }
 
-    const apiUrl = `/api/productos/${id}/trazabilidad/`;
+    const orderId = this.route.snapshot.queryParamMap.get('order_id');
+    let apiUrl = `/api/productos/${id}/trazabilidad/`;
+    if (orderId) {
+      apiUrl += `?order_id=${orderId}`;
+    }
 
     console.log('URL API TRAZABILIDAD:', apiUrl);
 
@@ -56,12 +68,20 @@ export class TrazabilidadComponent implements OnInit {
         this.producto = {
           id: data.id,
           nombre: data.nombre || data.name || 'Producto sin nombre',
-          origen: data.origen || data.origin || 'Origen no especificado',
+          origen: data.origen || data.origin || 'Provincia no especificada',
           lote: data.lote ?? null,
           finca_origen: data.finca_origen ?? null,
           fecha_cosecha: data.fecha_cosecha ?? null,
           certificado: data.certificado || data.certificate_url || null,
+          qr_url: data.qr_url || null,
           productor: data.productor || data.ownerName || 'Productor no especificado',
+          order_id: data.order_id ?? null,
+          fecha_entrega_prevista: data.fecha_entrega_prevista ?? null,
+          centro_destinatario: data.centro_destinatario ?? null,
+          estado_suministro: data.estado_suministro ?? null,
+          respuesta_productor: data.respuesta_productor ?? null,
+          frecuencia: data.frecuencia ?? null,
+          tipo_pedido: data.tipo_pedido ?? null,
         };
 
         this.error = '';
@@ -82,5 +102,60 @@ export class TrazabilidadComponent implements OnInit {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  protected getTimelineSteps(): { title: string; desc: string; completed: boolean; current: boolean }[] {
+    if (!this.producto || !this.producto.estado_suministro) return [];
+
+    const status = this.producto.estado_suministro;
+    const isCancelled = status === 'CANCELADO';
+
+    const steps = [
+      {
+        title: 'Planificación Registrada',
+        desc: 'El centro solicitó el suministro planificado.',
+        completed: true,
+        current: status === 'PENDIENTE'
+      },
+      {
+        title: 'Aceptado por Productor',
+        desc: this.producto.respuesta_productor 
+          ? `Confirmado. Nota: "${this.producto.respuesta_productor}"`
+          : 'El productor local validó la disponibilidad y reservó la cosecha.',
+        completed: ['ACEPTADO', 'EN_PREPARACION', 'EN_REPARTO', 'ENTREGADO'].includes(status),
+        current: status === 'ACEPTADO'
+      },
+      {
+        title: 'En Preparación',
+        desc: 'Lavado, calibrado y empaquetado ecológico.',
+        completed: ['EN_PREPARACION', 'EN_REPARTO', 'ENTREGADO'].includes(status),
+        current: status === 'EN_PREPARACION'
+      },
+      {
+        title: 'En Reparto',
+        desc: 'Transporte a temperatura controlada (suministro local).',
+        completed: ['EN_REPARTO', 'ENTREGADO'].includes(status),
+        current: status === 'EN_REPARTO'
+      },
+      {
+        title: 'Entregado en Destino',
+        desc: 'Cargado en las cocinas del centro de restauración.',
+        completed: status === 'ENTREGADO',
+        current: status === 'ENTREGADO'
+      }
+    ];
+
+    if (isCancelled) {
+      steps.push({
+        title: 'Pedido Cancelado',
+        desc: this.producto.respuesta_productor 
+          ? `Cancelación. Motivo: "${this.producto.respuesta_productor}"`
+          : 'Suministro cancelado por motivos logísticos o de cultivo.',
+        completed: true,
+        current: true
+      });
+    }
+
+    return steps;
   }
 }

@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ReviewService, ProducerProfile, Review } from '../services/review.service';
 import { AuthService } from '../services/auth.service';
+import { ProductService } from '../services/product.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-perfil-productor',
@@ -17,6 +19,7 @@ export class PerfilProductor implements OnInit {
   private readonly reviewService = inject(ReviewService);
   protected readonly authService = inject(AuthService);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly productService = inject(ProductService);
 
   protected loading = true;
   protected error = '';
@@ -86,20 +89,27 @@ export class PerfilProductor implements OnInit {
   }
 
   getProductImageUrl(product: any): string {
-    return product.image_url || product.image_url_legacy || 'assets/images/placeholder.png';
+    const url = product.image_url || product.image_url_legacy || '';
+    if (!url || url.includes('assets/products/')) {
+      return this.productService.getImageForProduct(product.name || product.nombre, product.categoria);
+    }
+    return url;
   }
 
   fixMediaUrl(url: string): string {
     if (!url) return '';
     url = url.trim();
-    if (url.startsWith('http://127.0.0.1:8000') || url.startsWith('http://localhost:8000')) {
+    if (url.startsWith(environment.apiUrl)) {
       return url;
     }
+    if (url.startsWith('http://127.0.0.1:8000') || url.startsWith('http://localhost:8000')) {
+      return url.replace('http://127.0.0.1:8000', environment.apiUrl).replace('http://localhost:8000', environment.apiUrl);
+    }
     if (url.startsWith('/media/')) {
-      return `http://127.0.0.1:8000${url}`;
+      return `${environment.apiUrl}${url}`;
     }
     if (url.startsWith('media/')) {
-      return `http://127.0.0.1:8000/${url}`;
+      return `${environment.apiUrl}/${url}`;
     }
     return url;
   }

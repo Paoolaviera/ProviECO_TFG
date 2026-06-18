@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 from products.models import Producto
 
 
@@ -39,8 +40,51 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     paid_at = models.DateTimeField(null=True, blank=True)
 
+    tipo_pedido = models.CharField(
+        max_length=30,
+        choices=[
+            ('COMPRA_DIRECTA', 'Compra Directa'),
+            ('PEDIDO_PLANIFICADO', 'Pedido Planificado'),
+            ('NORMAL', 'Compra Normal'),
+            ('PLANIFICADO_RESTAURACION', 'Pedido Planificado Restauración')
+        ],
+        default='NORMAL'
+    )
+    centro_nombre = models.CharField(max_length=150, blank=True, null=True)
+    tipo_centro = models.CharField(max_length=50, blank=True, null=True)
+    fecha_entrega_deseada = models.DateField(blank=True, null=True)
+    observaciones = models.TextField(blank=True, null=True)
+    estado_suministro = models.CharField(
+        max_length=30,
+        choices=[
+            ('PENDIENTE', 'Pendiente de aceptación'),
+            ('PARCIALMENTE_ACEPTADO', 'Parcialmente aceptado'),
+            ('CONFIRMADO', 'Confirmado'),
+            ('EN_PREPARACION', 'En preparación'),
+            ('EN_REPARTO', 'En reparto'),
+            ('ENTREGADO', 'Entregado'),
+            ('RECHAZADO', 'Rechazado'),
+            ('RECHAZADO_PARCIAL', 'Rechazado parcialmente'),
+            ('CANCELADO', 'Cancelar')
+        ],
+        default='PENDIENTE',
+        blank=True,
+        null=True
+    )
+
+    numero_comensales = models.IntegerField(blank=True, null=True)
+    observaciones_menu = models.TextField(blank=True, null=True)
+    necesidades_estimadas = models.TextField(blank=True, null=True)
+    mensaje_centro = models.TextField(blank=True, null=True)
+    respuesta_productor = models.TextField(blank=True, null=True)
+    fecha_respuesta_productor = models.DateTimeField(blank=True, null=True)
+    frecuencia = models.CharField(max_length=50, blank=True, null=True)
+    ecobox_id = models.IntegerField(blank=True, null=True)
+    ecobox_nombre = models.CharField(max_length=150, blank=True, null=True)
+    proxima_entrega = models.DateField(blank=True, null=True)
+
     def __str__(self):
-        return f"Pedido #{self.id} - {self.user.email} - {self.status}"
+        return f"Pedido #{self.id} ({self.tipo_pedido}) - {self.user.email} - {self.status}"
 
 
 class OrderItem(models.Model):
@@ -61,6 +105,18 @@ class OrderItem(models.Model):
     quantity = models.PositiveIntegerField()
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     subtotal = models.DecimalField(max_digits=10, decimal_places=2)
+    estado_productor = models.CharField(
+        max_length=30,
+        choices=[
+            ('PENDIENTE', 'Pendiente'),
+            ('ACEPTADO', 'Aceptado'),
+            ('RECHAZADO', 'Rechazado'),
+            ('EN_PREPARACION', 'En preparación'),
+            ('ENTREGADO', 'Entregado'),
+        ],
+        default='PENDIENTE'
+    )
+    observaciones_productor = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.product_name} x {self.quantity}"
@@ -144,3 +200,50 @@ class SubscriptionItem(models.Model):
 
     def __str__(self):
         return f"{self.product_name} x {self.quantity} (Suscripción #{self.subscription.id})"
+
+
+class EcoBox(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='ecoboxes'
+    )
+    nombre = models.CharField(max_length=150)
+    descripcion = models.TextField(blank=True, null=True)
+    numero_comensales = models.IntegerField(default=0)
+    frecuencia = models.CharField(max_length=50, default='Semanal')
+    fecha_inicio = models.DateField(default=timezone.now)
+    proxima_entrega = models.DateField(blank=True, null=True)
+    estado = models.CharField(
+        max_length=20,
+        choices=(
+            ('ACTIVO', 'Activo'),
+            ('INACTIVO', 'Inactivo')
+        ),
+        default='ACTIVO'
+    )
+    observaciones = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.nombre} - {self.user.email} ({self.frecuencia})"
+
+
+class EcoBoxItem(models.Model):
+    ecobox = models.ForeignKey(
+        EcoBox,
+        on_delete=models.CASCADE,
+        related_name='items'
+    )
+    producto = models.ForeignKey(
+        Producto,
+        on_delete=models.CASCADE
+    )
+    cantidad = models.IntegerField(default=1)
+    unidad = models.CharField(max_length=30, blank=True, null=True)
+    precio_estimado = models.DecimalField(max_digits=10, decimal_places=2)
+    observaciones = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.producto.name} x {self.cantidad} ({self.ecobox.nombre})"

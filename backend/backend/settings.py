@@ -38,7 +38,7 @@ SECRET_KEY = 'django-insecure-#tm-b!-h*x0gjcluf5((-3q$tn@tb)kh1=hfnv&w!3hznk^hxo
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -186,4 +186,4 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 if not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-    DEFAULT_FROM_EMAIL = 'noreply@ecomarket.local'
+    DEFAULT_FROM_EMAIL = 'noreply@provieco.local'

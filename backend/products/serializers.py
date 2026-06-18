@@ -45,6 +45,13 @@ class ProductoSerializer(serializers.ModelSerializer):
             'qr_url',
             'average_rating',
             'reviews_count',
+            'categoria',
+            'temporada',
+            'fecha_disponible_desde',
+            'fecha_disponible_hasta',
+            'permite_reserva_futura',
+            'activo',
+            'observaciones_admin',
         ]
 
         read_only_fields = ['owner', 'verification_status']

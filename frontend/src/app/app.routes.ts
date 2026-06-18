@@ -30,7 +30,15 @@ export const routes: Routes = [
   { path: 'confirmar-pedido', component: ConfirmarPedidoComponent },
   { path: 'pago-pedido/:id', component: PagoPedidoComponent },
   {
+    path: 'restauracion',
+    loadComponent: () => import('./restauracion/restauracion').then((m) => m.RestauracionComponent),
+  },
+  {
     path: 'trazabilidad/:id',
     loadComponent: () => import('./trazabilidad/trazabilidad').then((m) => m.TrazabilidadComponent),
+  },
+  {
+    path: 'pedido-planificado/:id',
+    loadComponent: () => import('./pedido-planificado-detalle/pedido-planificado-detalle').then((m) => m.PedidoPlanificadoDetalleComponent),
   },
 ];

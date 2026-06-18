@@ -16,9 +16,13 @@ from .views import (
     AddressDetailView,
     UserPreferencesView,
     ChangePasswordView,
+    SubirDocumentoView,
+    ValidarCentroView,
 )
 
 urlpatterns = [
+    path('me/subir-documento/', SubirDocumentoView.as_view(), name='subir_documento'),
+    path('admin/users/<int:user_id>/validar-centro/', ValidarCentroView.as_view(), name='validar_centro'),
     path('me/', UserDetailView.as_view(), name='user_detail'),
     path('me/addresses/', AddressListCreateView.as_view(), name='address_list_create'),
     path('me/addresses/<int:pk>/', AddressDetailView.as_view(), name='address_detail'),

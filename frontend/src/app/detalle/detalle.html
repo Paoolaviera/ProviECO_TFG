@@ -17,8 +17,12 @@
       <h1 class="title">{{ producto.nombre }}</h1>
 
       <div class="meta-info">
-        <p><strong>Origen:</strong> {{ producto.origen }}</p>
+        <p><strong>Categoría:</strong> {{ producto.categoria }}</p>
+        <p><strong>Provincia:</strong> {{ producto.origen }}</p>
+        <p *ngIf="producto.fincaOrigen"><strong>Finca de origen:</strong> {{ producto.fincaOrigen }}</p>
         <p><strong>Productor:</strong> {{ producto.productor }}</p>
+        <p *ngIf="producto.lote"><strong>Lote:</strong> {{ producto.lote }}</p>
+        <p *ngIf="producto.fechaCosecha"><strong>Fecha de cosecha:</strong> {{ producto.fechaCosecha | date:'dd/MM/yyyy' }}</p>
       </div>
 
       <div class="price-box">
@@ -30,22 +34,23 @@
         {{ producto.descripcion }}
       </p>
 
-      @if (producto.certificadoUrl) {
-      <div class="certificate-box">
-        <div>
-          <span class="certificate-label">Certificado ecologico verificado</span>
-          <p class="certificate-text">Documento revisado por administracion.</p>
+      <div *ngIf="producto.certificadoUrl" class="certificate-box" style="margin: 20px 0; padding: 15px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-card);">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px;">
+          <div>
+            <span class="certificate-label" style="font-weight: bold; color: var(--primary-green);">Certificado ecológico verificado</span>
+            <p class="certificate-text" style="font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0;">Documento oficial revisado por la administración.</p>
+          </div>
+          <a
+            [href]="producto.certificadoUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn-certificate"
+            style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background-color: var(--primary-green); color: white; border-radius: 6px; font-weight: bold; text-decoration: none; font-size: 14px;"
+          >
+            <i class="fa-solid fa-file-pdf"></i> Ver certificado ecológico
+          </a>
         </div>
-        <a
-          [href]="producto.certificadoUrl"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="btn-certificate"
-        >
-          Ver PDF
-        </a>
       </div>
-      }
 
       <div class="stock-info">
         <span class="status-dot"></span>

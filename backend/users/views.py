@@ -38,7 +38,7 @@ class RegisterView(generics.CreateAPIView):
 
         try:
             email = EmailMultiAlternatives(
-                subject='🌱 ¡Bienvenido a EcoMarket!',
+                subject='🌱 ¡Bienvenido a ProviECO!',
                 body=plain_message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 to=[user.email]
@@ -321,6 +321,7 @@ class AdminProductDetailView(APIView):
             return Response({'detail': 'Producto no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
 
         new_status = request.data.get('verification_status')
+        observaciones = request.data.get('observaciones_admin')
         valid_statuses = {'PENDIENTE', 'VERIFICADO', 'RECHAZADO'}
 
         if new_status not in valid_statuses:
@@ -330,7 +331,12 @@ class AdminProductDetailView(APIView):
             )
 
         product.verification_status = new_status
-        product.save(update_fields=['verification_status'])
+        update_fields = ['verification_status']
+        if observaciones is not None:
+            product.observaciones_admin = observaciones
+            update_fields.append('observaciones_admin')
+
+        product.save(update_fields=update_fields)
 
         log_admin_action(
             request.user,
@@ -374,4 +380,60 @@ from .serializers import CustomTokenObtainPairSerializer
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+
+
+from rest_framework.parsers import MultiPartParser, FormParser
+from django.utils import timezone
+
+class SubirDocumentoView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request):
+        user = request.user
+        if user.rol != 'RESTAURACION':
+            return Response({'detail': 'Solo las cuentas de restauración colectiva pueden subir documentos justificativos.'}, status=status.HTTP_403_FORBIDDEN)
+        
+        documento = request.FILES.get('documento_centro')
+        if not documento:
+            return Response({'detail': 'No se ha proporcionado ningún archivo.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user.documento_centro = documento
+        user.estado_validacion_centro = 'PENDIENTE'
+        user.fecha_subida_documento = timezone.now()
+        user.save()
+        
+        return Response(UserSerializer(user, context={'request': request}).data)
+
+
+class ValidarCentroView(APIView):
+    permission_classes = (IsPlatformAdmin,)
+
+    def post(self, request, user_id):
+        try:
+            target_user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'detail': 'Usuario no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        nuevo_estado = request.data.get('estado')
+        observaciones = request.data.get('observaciones', '')
+        
+        if nuevo_estado not in ['PENDIENTE', 'VALIDADO', 'RECHAZADO']:
+            return Response({'detail': 'Estado de validación no válido.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        target_user.estado_validacion_centro = nuevo_estado
+        target_user.observaciones_validacion_admin = observaciones
+        target_user.fecha_validacion_centro = timezone.now()
+        target_user.save()
+        
+        log_admin_action(
+            request.user,
+            'RESTAURACION_VALIDATION_UPDATED',
+            'USER',
+            target_user.id,
+            f'{target_user.username}: {nuevo_estado}'
+        )
+        
+        return Response(AdminUserSerializer(target_user, context={'request': request}).data)
+
 

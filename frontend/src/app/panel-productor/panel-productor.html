@@ -2,7 +2,7 @@
   <section class="producer-shell">
     <header class="producer-head">
       <div>
-        <p class="eyebrow">EcoMarket</p>
+        <p class="eyebrow">ProviECO</p>
         <h1>Área de productor</h1>
         <p class="lead">
           Gestiona tus productos, actualiza stock y mantén tu catálogo listo para la venta.
@@ -106,6 +106,68 @@
           }
         </label>
 
+        <label class="field">
+          <span>Categoría</span>
+          <select formControlName="categoria">
+            <option value="Frutas">Frutas</option>
+            <option value="Verduras">Verduras</option>
+            <option value="Lacteos">Lácteos</option>
+            <option value="Huevos">Huevos</option>
+            <option value="Miel">Miel</option>
+            <option value="Bebidas">Bebidas</option>
+            <option value="Conservas">Conservas</option>
+            <option value="Otros">Otros</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Temporada</span>
+          <select formControlName="temporada">
+            <option value="Primavera">Primavera</option>
+            <option value="Verano">Verano</option>
+            <option value="Otoño">Otoño</option>
+            <option value="Invierno">Invierno</option>
+            <option value="Todo el año">Todo el año</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Fecha Disponible Desde (Opcional)</span>
+          <input type="date" formControlName="fecha_disponible_desde" />
+        </label>
+
+        <label class="field">
+          <span>Fecha Disponible Hasta (Opcional)</span>
+          <input type="date" formControlName="fecha_disponible_hasta" />
+        </label>
+
+        <label class="field">
+          <span>Número de Lote (Opcional)</span>
+          <input type="text" formControlName="lote" placeholder="Ej. LOT-TOM-001" />
+        </label>
+
+        <label class="field">
+          <span>Finca / Parcela de Origen (Opcional)</span>
+          <input type="text" formControlName="finca_origen" placeholder="Ej. Finca San Lorenzo" />
+        </label>
+
+        <label class="field">
+          <span>Fecha de Cosecha / Preparación (Opcional)</span>
+          <input type="date" formControlName="fecha_cosecha" />
+        </label>
+
+        <div class="field full" style="display: flex; flex-direction: column; gap: 8px;">
+          <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-weight: normal;">
+            <input type="checkbox" formControlName="permite_reserva_futura" style="width: auto !important; margin: 0;" />
+            <span>Permite reserva futura (Planificación Restauración Colectiva)</span>
+          </label>
+
+          <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-weight: normal;">
+            <input type="checkbox" formControlName="activo" style="width: auto !important; margin: 0;" />
+            <span>Producto activo (disponible en catálogo)</span>
+          </label>
+        </div>
+
         <div class="field">
           <span>Imagen del producto</span>
           <label class="file-picker" for="product-image">
@@ -153,6 +215,205 @@
       </form>
     </section>
 
+    <!-- Solicitudes de Suministro Section -->
+    <section class="producer-card" style="margin-bottom: 25px;">
+      <div class="card-head" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+        <div>
+          <h2>Solicitudes de suministro</h2>
+          <p>Gestiona los pedidos planificados recibidos desde centros de restauración colectiva.</p>
+        </div>
+
+        <div class="filter-controls" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <span style="font-size: 13px; font-weight: 600; color: #7f8c8d;">Filtrar:</span>
+          <button type="button" class="btn btn-secondary" [class.active-filter]="requestFilter === 'TODAS'" (click)="setRequestFilter('TODAS')" style="padding: 6px 12px; font-size: 12px; border-radius: 20px; cursor: pointer;">Todas</button>
+          <button type="button" class="btn btn-secondary" [class.active-filter]="requestFilter === 'PENDIENTE'" (click)="setRequestFilter('PENDIENTE')" style="padding: 6px 12px; font-size: 12px; border-radius: 20px; cursor: pointer;">Pendientes</button>
+          <button type="button" class="btn btn-secondary" [class.active-filter]="requestFilter === 'ACEPTADO'" (click)="setRequestFilter('ACEPTADO')" style="padding: 6px 12px; font-size: 12px; border-radius: 20px; cursor: pointer;">Aceptadas</button>
+          <button type="button" class="btn btn-secondary" [class.active-filter]="requestFilter === 'RECHAZADO'" (click)="setRequestFilter('RECHAZADO')" style="padding: 6px 12px; font-size: 12px; border-radius: 20px; cursor: pointer;">Rechazadas</button>
+        </div>
+      </div>
+
+      <!-- Success & Error feedback inside requests -->
+      @if (requestSuccessMessage) {
+        <p class="feedback success">{{ requestSuccessMessage }}</p>
+      }
+      @if (requestErrorMessage) {
+        <p class="feedback error">{{ requestErrorMessage }}</p>
+      }
+
+      @if (loadingRequests) {
+        <div class="loading-state" style="padding: 30px; text-align: center;">
+          <div class="spinner" style="margin: 0 auto 10px auto; width: 30px; height: 30px; border: 3px solid rgba(47, 125, 50, 0.2); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+          <p>Cargando solicitudes de suministro...</p>
+        </div>
+      } @else if (filteredRequests.length === 0) {
+        <p class="state-message">No tienes ninguna solicitud de suministro que coincida con el filtro.</p>
+      } @else {
+        <div class="table-wrap">
+          <table class="producer-table">
+            <thead>
+              <tr>
+                <th>Centro</th>
+                <th>Fecha Entrega</th>
+                <th>Frecuencia</th>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Subtotal</th>
+                <th>Estado Línea</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (req of filteredRequests; track req.id) {
+                <tr>
+                  <td>
+                    <strong>{{ req.buyer_name }}</strong>
+                    <p class="muted" style="margin-top: 4px; font-size: 11px;">Pedido #{{ req.order_id }}</p>
+                    <p class="muted" style="margin-top: 2px; font-size: 11px; font-style: italic;" *ngIf="req.observaciones_centro">
+                      Centro: "{{ req.observaciones_centro }}"
+                    </p>
+                  </td>
+                  <td>{{ req.fecha_entrega_deseada | date:'dd/MM/yyyy' }}</td>
+                  <td>
+                    @if (req.ecobox_nombre) {
+                      <span class="ecobox-badge" style="display: block; font-size: 11px; color: var(--primary, #2ecc71); font-weight: 600; margin-bottom: 4px;">
+                        EcoBox: {{ req.ecobox_nombre }}
+                      </span>
+                    }
+                    <span style="font-size: 13px;">{{ req.texto_frecuencia || req.frecuencia_texto || 'Única entrega' }}</span>
+                  </td>
+                  <td>{{ req.product_name }}</td>
+                  <td>
+                    <strong>{{ req.quantity }}</strong> {{ req.unit }}
+                    <span class="muted" style="display: block; font-size: 11px;">({{ formatPrice(req.unit_price) }} €/{{ req.unit }})</span>
+                  </td>
+                  <td><strong>{{ formatPrice(req.subtotal) }} €</strong></td>
+                  <td>
+                    <span [class]="getLineStatusClass(req.estado_productor)">
+                      {{ getLineStatusLabel(req.estado_productor) }}
+                    </span>
+                    <p class="muted" style="margin-top: 4px; font-size: 11px; font-style: italic; max-width: 200px; word-wrap: break-word;" *ngIf="req.observaciones_productor">
+                      Tus observaciones: "{{ req.observaciones_productor }}"
+                    </p>
+                  </td>
+                  <td class="td-actions">
+                    @if (req.estado_productor === 'PENDIENTE') {
+                      <button class="btn-mini" type="button" (click)="acceptRequest(req.id)" style="background-color: #2ecc71; color: white;">
+                        Aceptar
+                      </button>
+                      <button class="btn-mini btn-danger" type="button" (click)="openRejectModal(req)">
+                        Rechazar
+                      </button>
+                    } @else {
+                      <span class="muted" style="font-size: 12px;">Completado</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    <!-- Calendario de Entregas Section -->
+    <section class="producer-card" style="margin-bottom: 25px;">
+      <div class="card-head" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+        <div>
+          <h2>Calendario de entregas</h2>
+          <p>Próximas entregas programadas estimadas a partir de las solicitudes aceptadas o pendientes.</p>
+        </div>
+
+        <div class="filter-controls" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <span style="font-size: 13px; font-weight: 600; color: #7f8c8d;">Filtrar:</span>
+          <button type="button" class="btn btn-secondary" [class.active-filter]="calendarFilter === 'TODAS'" (click)="setCalendarFilter('TODAS')" style="padding: 6px 12px; font-size: 12px; border-radius: 20px; cursor: pointer;">Todas</button>
+          <button type="button" class="btn btn-secondary" [class.active-filter]="calendarFilter === 'PENDIENTES'" (click)="setCalendarFilter('PENDIENTES')" style="padding: 6px 12px; font-size: 12px; border-radius: 20px; cursor: pointer;">Pendientes</button>
+          <button type="button" class="btn btn-secondary" [class.active-filter]="calendarFilter === 'ACEPTADAS'" (click)="setCalendarFilter('ACEPTADAS')" style="padding: 6px 12px; font-size: 12px; border-radius: 20px; cursor: pointer;">Aceptadas</button>
+          <button type="button" class="btn btn-secondary" [class.active-filter]="calendarFilter === 'PROXIMOS_7'" (click)="setCalendarFilter('PROXIMOS_7')" style="padding: 6px 12px; font-size: 12px; border-radius: 20px; cursor: pointer;">Próximos 7 días</button>
+          <button type="button" class="btn btn-secondary" [class.active-filter]="calendarFilter === 'PROXIMOS_30'" (click)="setCalendarFilter('PROXIMOS_30')" style="padding: 6px 12px; font-size: 12px; border-radius: 20px; cursor: pointer;">Próximos 30 días</button>
+        </div>
+      </div>
+
+      @if (loadingCalendar) {
+        <div class="loading-state" style="padding: 30px; text-align: center;">
+          <div class="spinner" style="margin: 0 auto 10px auto; width: 30px; height: 30px; border: 3px solid rgba(47, 125, 50, 0.2); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+          <p>Cargando calendario de entregas...</p>
+        </div>
+      } @else if (filteredCalendar.length === 0) {
+        <p class="state-message">No hay entregas programadas en el periodo o filtro seleccionado.</p>
+      } @else {
+        <div class="calendar-list" style="display: flex; flex-direction: column; gap: 20px;">
+          @for (group of filteredCalendar; track group.fecha) {
+            <div class="calendar-date-group" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+              <div class="date-group-header" style="background: #f8fafc; padding: 12px 20px; border-bottom: 1px solid #e2e8f0; font-weight: 700; color: #1e293b; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-regular fa-calendar-check" style="color: var(--primary, #2ecc71);"></i>
+                <span style="margin-left: 5px;">{{ group.fecha | date:'dd/MM/yyyy' }}</span>
+              </div>
+              <div class="date-group-deliveries" style="padding: 15px 20px; display: flex; flex-direction: column; gap: 12px;">
+                @for (ent of group.entregas; track ent.pedido_id + '-' + ent.producto + '-' + ent.es_prevision) {
+                  <div class="delivery-item-card" style="padding: 12px 15px; border-left: 4px solid #3b82f6; background: #fdfdfd; display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);" [style.border-left-color]="ent.es_prevision ? '#cbd5e1' : (ent.estado === 'PENDIENTE' ? '#eab308' : '#2ecc71')">
+                    <div>
+                      <h4 style="margin: 0 0 6px 0; font-size: 15px; font-weight: 700; color: #334155;">
+                        {{ ent.centro }} &mdash; {{ ent.producto }} x{{ ent.cantidad }} {{ ent.unidad }}
+                      </h4>
+                      <div style="font-size: 12px; color: #64748b; display: flex; flex-wrap: wrap; gap: 15px;">
+                        <span><strong>Frecuencia:</strong> {{ ent.frecuencia_texto }}</span>
+                        @if (ent.ecobox_nombre) {
+                          <span><strong>EcoBox:</strong> {{ ent.ecobox_nombre }}</span>
+                        }
+                        @if (!ent.es_prevision) {
+                          <span class="muted">Pedido #{{ ent.pedido_id }}</span>
+                        }
+                      </div>
+                      @if (ent.es_prevision) {
+                        <p class="prevision-note" style="margin: 6px 0 0 0; font-size: 12px; font-style: italic; color: #2ecc71; font-weight: 600;">
+                          Entrega prevista según EcoBox {{ ent.frecuencia | lowercase }}
+                        </p>
+                      }
+                    </div>
+                    <div>
+                      @if (ent.es_prevision) {
+                        <span class="status-badge pending" style="background-color: #cbd5e1; color: #475569;">Prevista</span>
+                      } @else {
+                        <span [class]="getLineStatusClass(ent.estado)">
+                          {{ getLineStatusLabel(ent.estado) }}
+                        </span>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    <!-- Reject Observation Modal -->
+    <div class="modal-backdrop" *ngIf="showRejectModal" (click)="closeRejectModal()" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+      <div class="modal-content" (click)="$event.stopPropagation()" style="background: white; padding: 25px; border-radius: 8px; width: 100%; max-width: 450px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+        <header style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 12px; margin-bottom: 15px;">
+          <h3 style="margin: 0; font-size: 1.2rem; font-weight: 700;">Rechazar Solicitud de Suministro</h3>
+          <button type="button" (click)="closeRejectModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #aaa;">&times;</button>
+        </header>
+        
+        <div class="modal-body">
+          <p style="font-size: 14px; margin-bottom: 15px; color: #555; line-height: 1.4;">
+            Indica el motivo de rechazo de la solicitud de <strong>{{ selectedRequestForReject?.product_name }}</strong> ({{ selectedRequestForReject?.quantity }} {{ selectedRequestForReject?.unit }}) para <strong>{{ selectedRequestForReject?.buyer_name }}</strong>.
+          </p>
+          
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
+            <label for="motivo_rechazo" style="font-size: 13px; font-weight: 600; color: #333;">Motivo / Observaciones (Opcional):</label>
+            <textarea id="motivo_rechazo" [(ngModel)]="observacionesRechazo" placeholder="Ej. No dispondremos de stock suficiente en esa fecha." rows="3" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; resize: vertical; box-sizing: border-box;"></textarea>
+          </div>
+          
+          <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary" (click)="closeRejectModal()" style="padding: 8px 16px; border-radius: 20px; cursor: pointer;">Cancelar</button>
+            <button type="button" class="btn btn-primary" (click)="rejectRequest()" style="background-color: #e74c3c; border-color: #e74c3c; color: white; padding: 8px 16px; border-radius: 20px; cursor: pointer;">Rechazar Solicitud</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <section class="producer-card">
       <div class="table-head">
         <div>
@@ -181,7 +442,7 @@
             <thead>
             <tr>
               <th>Nombre</th>
-              <th>Origen</th>
+              <th>Provincia</th>
               <th>Precio</th>
               <th>Disponibilidad</th>
               <th>Estado verificación</th>
@@ -202,6 +463,32 @@
                       <div>
                         <strong>{{ product.name }}</strong>
                         <p class="muted">{{ product.description }}</p>
+                        
+                        <!-- Mensajes claros de estado de certificado y verificación -->
+                        <div style="margin-top: 6px; font-size: 12px; font-weight: 500;">
+                          @if (!product.certificate && !product.certificate_url) {
+                            <span style="color: #c05621; display: inline-flex; align-items: center; gap: 4px;">
+                              <i class="fa-solid fa-triangle-exclamation"></i> Este producto no será visible en el catálogo hasta que adjuntes un certificado ecológico y sea verificado por el administrador.
+                            </span>
+                          } @else if (product.verification_status === 'PENDIENTE') {
+                            <span style="color: #9a6a00; display: inline-flex; align-items: center; gap: 4px;">
+                              <i class="fa-solid fa-clock"></i> Certificado pendiente de revisión por el administrador.
+                            </span>
+                          } @else if (product.verification_status === 'RECHAZADO') {
+                            <div style="color: #c53030;">
+                              <span style="display: inline-flex; align-items: center; gap: 4px; font-weight: bold;">
+                                <i class="fa-solid fa-circle-xmark"></i> Certificado rechazado. Revisa las observaciones del administrador.
+                              </span>
+                              <p *ngIf="product.observaciones_admin" style="margin: 2px 0 0 16px; font-style: italic; color: #9b2c2c;">
+                                Observaciones: "{{ product.observaciones_admin }}"
+                              </p>
+                            </div>
+                          } @else if (product.verification_status === 'VERIFICADO') {
+                            <span style="color: #2f855a; display: inline-flex; align-items: center; gap: 4px;">
+                              <i class="fa-solid fa-circle-check"></i> Producto verificado y visible en catálogo.
+                            </span>
+                          }
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -216,12 +503,26 @@
                   <td>{{ product.quantity }}</td>
 
                   <td>
-                    <span [class]="getStatusClass(product.verification_status)">
-                      {{ getStatusLabel(product.verification_status) }}
+                    <span [class]="getStatusClass(product)">
+                      {{ getStatusLabel(product) }}
                     </span>
                   </td>
 
                   <td class="td-actions">
+                    <a
+                      class="btn-mini"
+                      *ngIf="product.certificate_url"
+                      [href]="product.certificate_url"
+                      target="_blank"
+                      rel="noopener"
+                      style="background: var(--success-bg); color: var(--success); text-decoration: none; display: inline-flex; align-items: center; justify-content: center;"
+                    >
+                      Certificado
+                    </a>
+                    <span *ngIf="!product.certificate_url" style="font-size: 11px; color: var(--muted); align-self: center;">
+                      Sin certificado
+                    </span>
+
                     <button class="btn-mini btn-edit" type="button" (click)="editProduct(product)">
                       Editar
                     </button>

@@ -4,12 +4,15 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef } from '@angular/core';
 import { CartService } from '../services/cart.service';
+import { ProductService } from '../services/product.service';
+import { environment } from '../../environments/environment';
 
 // Usamos la misma estructura del catálogo, pero le añadimos una descripción
 export interface Producto {
   id: number;
   nombre: string;
   origen: string;
+  fincaOrigen?: string;
   productor: string;
   precio: number;
   unidad: string;
@@ -18,6 +21,9 @@ export interface Producto {
   tieneEcoSello: boolean;
   descripcion?: string;
   certificadoUrl?: string;
+  categoria?: string;
+  lote?: string;
+  fechaCosecha?: string;
 }
 
 @Component({
@@ -29,6 +35,7 @@ export interface Producto {
 })
 export class Detalle implements OnInit {
   private route = inject(ActivatedRoute);
+  private productService = inject(ProductService);
   producto: Producto | undefined;
 
   loading = true;
@@ -43,20 +50,49 @@ export class Detalle implements OnInit {
 
   cargarProducto(id: number) {
     this.loading = true;
-    this.http.get<any>(`http://localhost:8000/api/productos/${id}/`).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/api/productos/${id}/`).subscribe({
       next: (item) => {
+        const catVal = (() => {
+          const cat = String(item.categoria || '').trim();
+          if (!cat || cat.toLowerCase() === 'otros') {
+            const nm = String(item.name || '').toLowerCase();
+            if (nm.includes('tomate') || nm.includes('lechuga') || nm.includes('pepino') || nm.includes('zanahoria') || nm.includes('calabacín') || nm.includes('calabacin') || nm.includes('papa')) {
+              return 'Verduras';
+            } else if (nm.includes('manzana') || nm.includes('naranja') || nm.includes('platano') || nm.includes('fruta')) {
+              return 'Frutas';
+            } else if (nm.includes('queso') || nm.includes('leche') || nm.includes('lacteo') || nm.includes('lácteo')) {
+              return 'Lacteos';
+            } else if (nm.includes('huevo') || nm.includes('huevos')) {
+              return 'Huevos';
+            } else if (nm.includes('miel')) {
+              return 'Miel';
+            }
+          }
+          return cat || 'Otros';
+        })();
+
         this.producto = {
           id: item.id,
           nombre: item.name,
           origen: item.origin,
+          fincaOrigen: item.finca_origen,
           productor: item.ownerName || 'Productor Anónimo',
           precio: parseFloat(item.price),
           unidad: item.unit,
           disponibilidad: item.quantity,
-          imagenUrl: item.image_url || item.image_url_legacy || 'assets/images/placeholder.png',
+          imagenUrl: (() => {
+            const url = item.image_url || item.image_url_legacy || '';
+            if (!url || url.includes('assets/products/')) {
+              return this.productService.getImageForProduct(item.name, catVal);
+            }
+            return url;
+          })(),
           tieneEcoSello: item.verification_status === 'VERIFICADO',
           descripcion: item.description || '',
-          certificadoUrl: item.certificate_url || ''
+          certificadoUrl: item.certificate_url || '',
+          categoria: catVal,
+          lote: item.lote || '',
+          fechaCosecha: item.fecha_cosecha || ''
         };
         this.loading = false;
         this.cdr.detectChanges();

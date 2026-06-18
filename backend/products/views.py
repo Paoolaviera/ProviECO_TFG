@@ -5,7 +5,7 @@ from rest_framework.permissions import AllowAny
 from django.db.models import Q
 from .models import Producto, CartItem, Review
 from .serializers import ProductoSerializer, CartItemSerializer, ReviewSerializer
-from orders.models import OrderItem
+from orders.models import Order, OrderItem
 from .permissions import IsOwnerOrReadOnly, IsProductor
 from .services.recipe_service import parse_ingredients, generate_recipe_from_ingredients
 
@@ -22,6 +22,18 @@ class ProductoViewSet(viewsets.ModelViewSet):
     def trazabilidad(self, request, pk=None):
         producto = self.get_object()
 
+        order_id = request.query_params.get('order_id')
+        order = None
+        
+        if order_id:
+            try:
+                order = Order.objects.filter(id=order_id, items__product=producto).first()
+            except Exception:
+                pass
+        
+        if not order:
+            order = Order.objects.filter(items__product=producto, tipo_pedido__in=['PEDIDO_PLANIFICADO', 'PLANIFICADO_RESTAURACION']).order_by('-created_at').first()
+
         return Response({
             "id": producto.id,
             "nombre": producto.name,
@@ -31,23 +43,35 @@ class ProductoViewSet(viewsets.ModelViewSet):
             "fecha_cosecha": producto.fecha_cosecha,
             "certificado": request.build_absolute_uri(producto.certificate.url)
             if producto.certificate else None,
+            "qr_url": request.build_absolute_uri(producto.qr_image.url)
+            if producto.qr_image else None,
             "productor": producto.owner.first_name or producto.owner.username,
+            "order_id": order.id if order else None,
+            "fecha_entrega_prevista": order.fecha_entrega_deseada if order else None,
+            "centro_destinatario": order.centro_nombre or (order.user.nombre_centro if getattr(order.user, 'nombre_centro', None) else order.user.username) if order else None,
+            "estado_suministro": order.estado_suministro if order else None,
+            "respuesta_productor": order.respuesta_productor if order else None,
+            "frecuencia": order.frecuencia if order else None,
+            "tipo_pedido": order.tipo_pedido if order else None,
         })
 
 
     def get_queryset(self):
         """
-        - Usuarios anónimos o CLIENTE: solo productos VERIFICADO.
-        - PRODUCTOR autenticado: sus propios productos (todos los estados) + el resto VERIFICADO.
+        - ADMIN/is_staff/is_superuser: todos los productos.
+        - PRODUCTOR autenticado: sus propios productos (todos los estados) + el resto VERIFICADO con certificado ecológico.
+        - Usuarios anónimos o CLIENTE o RESTAURACION: solo productos VERIFICADO y con certificado ecológico.
         """
         user = self.request.user
+        if user.is_authenticated and (user.is_staff or user.is_superuser or getattr(user, 'rol', None) == 'ADMIN'):
+            return Producto.objects.all().order_by('-id')
         if user.is_authenticated and getattr(user, 'rol', None) == 'PRODUCTOR':
             return Producto.objects.filter(
-                Q(owner=user) | Q(verification_status='VERIFICADO')
+                Q(owner=user) | (Q(verification_status='VERIFICADO') & ~Q(certificate=None) & ~Q(certificate=''))
             ).order_by('-id').distinct()
         return Producto.objects.filter(
             verification_status='VERIFICADO'
-        ).order_by('-id')
+        ).exclude(Q(certificate=None) | Q(certificate='')).order_by('-id')
 
     def get_permissions(self):
         """

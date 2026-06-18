@@ -72,6 +72,128 @@
           </article>
         </div>
 
+        <!-- Información del Centro de Restauración -->
+        @if (user.rol === 'RESTAURACION') {
+          <h4 style="color: var(--primary-green); margin-top: 25px; margin-bottom: 10px; font-weight: 700; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 5px;">Detalles del Centro Colectivo</h4>
+          <div class="profile-cards" style="margin-bottom: 20px;">
+            <article class="info-card">
+              <p class="info-label">Nombre del centro</p>
+              <p class="info-value">{{ user.nombre_centro || 'No especificado' }}</p>
+            </article>
+            <article class="info-card">
+              <p class="info-label">Tipo de centro</p>
+              <p class="info-value">{{ user.tipo_centro || 'No especificado' }}</p>
+            </article>
+            <article class="info-card">
+              <p class="info-label">Persona responsable</p>
+              <p class="info-value">{{ user.persona_responsable || 'No especificada' }}</p>
+            </article>
+            <article class="info-card">
+              <p class="info-label">Observaciones</p>
+              <p class="info-value">{{ user.observaciones_centro || 'Ninguna' }}</p>
+            </article>
+          </div>
+
+          <h4 style="color: var(--primary-green); margin-top: 25px; margin-bottom: 10px; font-weight: 700; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 5px;">Documentación del centro</h4>
+          <div class="profile-cards" style="margin-bottom: 20px;">
+            <article class="info-card">
+              <p class="info-label">Estado de validación</p>
+              <p class="info-value" [style.color]="user.estado_validacion_centro === 'VALIDADO' ? '#2ecc71' : (user.estado_validacion_centro === 'RECHAZADO' ? '#e74c3c' : '#f1c40f')" style="font-weight: bold;">
+                {{ user.estado_validacion_centro || 'PENDIENTE' }}
+              </p>
+            </article>
+            <article class="info-card">
+              <p class="info-label">Nombre del centro</p>
+              <p class="info-value">{{ user.nombre_centro || 'No especificado' }}</p>
+            </article>
+            <article class="info-card">
+              <p class="info-label">Tipo de centro</p>
+              <p class="info-value">{{ user.tipo_centro || 'No especificado' }}</p>
+            </article>
+            <article class="info-card">
+              <p class="info-label">Persona responsable</p>
+              <p class="info-value">{{ user.persona_responsable || 'No especificada' }}</p>
+            </article>
+            <article class="info-card">
+              <p class="info-label">Provincia</p>
+              <p class="info-value">{{ user.provincia || 'No especificada' }}</p>
+            </article>
+          </div>
+
+          <div style="margin: 15px 0 25px 0;">
+            @if (user.documento_centro) {
+              <a [href]="getDocumentUrl(user.documento_centro)" target="_blank" class="btn" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; padding: 10px 20px; font-weight: bold; font-size: 14px; background-color: var(--primary-green); color: white; border-radius: 6px;">
+                <i class="fa-solid fa-file-pdf"></i> Ver documento acreditativo
+              </a>
+            } @else {
+              <span style="color: #e74c3c; font-weight: bold; font-size: 14px; display: inline-flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-circle-exclamation"></i> Documento no disponible
+              </span>
+            }
+          </div>
+
+          <!-- Banner de validación -->
+          <div class="validation-banner" style="margin: 20px 0; padding: 18px; border-radius: 12px; background: var(--bg-card); border: 1px solid var(--border); box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+            <div style="display: flex; align-items: flex-start; gap: 15px;">
+              @if (user.estado_validacion_centro === 'VALIDADO') {
+                <div style="background: rgba(46, 204, 113, 0.1); color: #2ecc71; padding: 10px 14px; border-radius: 50%; font-size: 1.5rem;">
+                  <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <div>
+                  <h4 style="margin: 0 0 5px 0; color: #2ecc71; font-weight: 700;">Centro Acreditado y Validado</h4>
+                  <p style="margin: 0; font-size: 14px; color: var(--dark-grey);">Su documentación ha sido verificada. Ya puede planificar pedidos y gestionar EcoBoxes activas.</p>
+                  @if (user.documento_centro) {
+                    <a [href]="getDocumentUrl(user.documento_centro)" target="_blank" style="margin-top: 10px; display: inline-block; color: var(--primary-green); font-size: 13px; font-weight: 600; text-decoration: none;">
+                      <i class="fa-solid fa-eye"></i> Ver documento cargado
+                    </a>
+                  }
+                </div>
+              } @else if (user.estado_validacion_centro === 'PENDIENTE') {
+                <div style="background: rgba(241, 196, 15, 0.1); color: #f1c40f; padding: 10px 12px; border-radius: 50%; font-size: 1.5rem;">
+                  <i class="fa-solid fa-clock"></i>
+                </div>
+                <div style="flex: 1;">
+                  <h4 style="margin: 0 0 5px 0; color: #d4ac0d; font-weight: 700;">Validación Pendiente de Aprobación</h4>
+                  <p style="margin: 0; font-size: 14px; color: var(--dark-grey);">El administrador está revisando su documentación justificativa. Se le notificará cuando sea aprobada.</p>
+                  
+                  <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
+                    <p style="margin: 0 0 10px 0; font-size: 13px; font-weight: 600;">¿Desea cambiar el documento cargado?</p>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                      <input type="file" (change)="onValidationFileSelected($event)" accept=".pdf,image/*" style="font-size: 13px;" />
+                      <button class="btn btn-primary" type="button" [disabled]="!selectedValidationFile || uploadingValidationFile" (click)="uploadValidationDocument()" style="padding: 6px 12px; font-size: 13px;">
+                        {{ uploadingValidationFile ? 'Subiendo...' : 'Actualizar Documento' }}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              } @else {
+                <div style="background: rgba(231, 76, 60, 0.1); color: #e74c3c; padding: 10px 13px; border-radius: 50%; font-size: 1.5rem;">
+                  <i class="fa-solid fa-circle-xmark"></i>
+                </div>
+                <div style="flex: 1;">
+                  <h4 style="margin: 0 0 5px 0; color: #e74c3c; font-weight: 700;">Validación Rechazada</h4>
+                  <p style="margin: 0 0 8px 0; font-size: 14px; color: var(--dark-grey);">Su documentación no ha sido aceptada por los administradores de la plataforma.</p>
+                  @if (user.observaciones_validacion_admin) {
+                    <p style="margin: 0 0 15px 0; font-size: 13px; font-style: italic; color: #c0392b; background: rgba(231, 76, 60, 0.05); padding: 10px; border-radius: 6px;">
+                      <strong>Motivo del rechazo:</strong> {{ user.observaciones_validacion_admin }}
+                    </p>
+                  }
+                  
+                  <div style="margin-top: 10px; padding-top: 15px; border-top: 1px solid var(--border);">
+                    <p style="margin: 0 0 10px 0; font-size: 13px; font-weight: 600;">Por favor, suba un nuevo documento acreditativo válido:</p>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                      <input type="file" (change)="onValidationFileSelected($event)" accept=".pdf,image/*" style="font-size: 13px;" />
+                      <button class="btn btn-primary" type="button" [disabled]="!selectedValidationFile || uploadingValidationFile" (click)="uploadValidationDocument()" style="padding: 6px 12px; font-size: 13px;">
+                        {{ uploadingValidationFile ? 'Subiendo...' : 'Enviar Nuevo Documento' }}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
         <div class="description-text">
           <p>
             Este espacio resume tus datos de cuenta y te permite actualizarlos sin depender
@@ -136,6 +258,39 @@
                 </select>
               </label>
 
+              @if (user.rol === 'RESTAURACION') {
+                <div style="width: 100%; border-top: 1px solid var(--border); margin: 20px 0; padding-top: 15px;">
+                  <h6 style="color: var(--primary-green); font-weight: 700; margin-bottom: 12px; font-size: 1rem;">Datos del Centro Colectivo</h6>
+                  
+                  <label class="field">
+                    <span>Nombre del Centro</span>
+                    <input type="text" formControlName="nombre_centro" placeholder="Ej. CEIP San Lorenzo" />
+                  </label>
+
+                  <label class="field">
+                    <span>Tipo de Centro</span>
+                    <select formControlName="tipo_centro">
+                      <option value="">Selecciona un tipo</option>
+                      <option value="COLEGIO">Colegio</option>
+                      <option value="HOSPITAL">Hospital</option>
+                      <option value="RESIDENCIA">Residencia</option>
+                      <option value="COMEDOR">Comedor</option>
+                      <option value="OTRO">Otro</option>
+                    </select>
+                  </label>
+
+                  <label class="field">
+                    <span>Persona Responsable</span>
+                    <input type="text" formControlName="persona_responsable" placeholder="Ej. María Gómez" />
+                  </label>
+
+                  <label class="field">
+                    <span>Observaciones del Centro</span>
+                    <textarea formControlName="observaciones_centro" placeholder="Necesidades especiales, dietas..." style="width: 100%; min-height: 80px; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: inherit;"></textarea>
+                  </label>
+                </div>
+              }
+
               <div class="form-actions">
                 <button class="btn btn-primary" type="submit" [disabled]="saving">
                   {{ saving ? 'Guardando...' : 'Guardar Cambios' }}
@@ -174,7 +329,9 @@
                     <div class="order-header" (click)="toggleExpandedItem(sale.id)" style="cursor: pointer;">
                       <div>
                         <strong>Pedido #{{ sale.order_id }}</strong>
-                        <span class="order-date">{{ sale.order_date | date:'dd/MM/yyyy HH:mm' }}</span>
+                        <span *ngIf="sale.tipo_pedido === 'PEDIDO_PLANIFICADO' || sale.tipo_pedido === 'PLANIFICADO_RESTAURACION'" class="badge-status status-verified" style="margin-left: 8px; font-size: 0.75rem; padding: 2px 6px;">Planificación</span>
+                        <a *ngIf="sale.tipo_pedido === 'PEDIDO_PLANIFICADO' || sale.tipo_pedido === 'PLANIFICADO_RESTAURACION'" [routerLink]="['/pedido-planificado', sale.order_id]" style="margin-left: 10px; color: var(--primary-green); font-weight: bold; text-decoration: underline;" (click)="$event.stopPropagation()">Ver Trazabilidad y Detalle</a>
+                        <span class="order-date" style="margin-left: 10px;">{{ sale.order_date | date:'dd/MM/yyyy' }}</span>
                       </div>
                       <div>
                         <span class="status-badge" [class]="'status-' + sale.order_status.toLowerCase()">
@@ -190,6 +347,29 @@
                         <div class="order-customer-info">
                           <p><strong>Comprador:</strong> {{ sale.buyer_name }} ({{ sale.buyer_email }})</p>
                           <p><strong>Dirección:</strong> {{ sale.delivery_address }}</p>
+                          
+                          <div *ngIf="sale.tipo_pedido === 'PEDIDO_PLANIFICADO' || sale.tipo_pedido === 'PLANIFICADO_RESTAURACION'" class="planned-details" style="margin-top: 12px; background: #e8f8f0; padding: 15px; border-radius: 8px; border-left: 4px solid var(--primary-green);">
+                            <p style="margin: 3px 0; font-size: 0.9rem; color: #2c3e50;"><strong>Centro de Restauración:</strong> {{ sale.centro_nombre }} ({{ sale.tipo_centro }})</p>
+                            <p style="margin: 3px 0; font-size: 0.9rem; color: #2c3e50;"><strong>Estimación Comensales:</strong> {{ sale.numero_comensales }}</p>
+                            <p style="margin: 3px 0; font-size: 0.9rem; color: #2c3e50;"><strong>Fecha de Entrega Planificada:</strong> {{ sale.fecha_entrega_deseada | date:'dd/MM/yyyy' }}</p>
+                            <p style="margin: 3px 0; font-size: 0.9rem; color: #2c3e50;"><strong>Observaciones del Centro:</strong> {{ sale.observaciones || 'Ninguna' }}</p>
+                            <p style="margin: 3px 0; font-size: 0.9rem; color: #2c3e50;" *ngIf="sale.respuesta_productor"><strong>Respuesta/Observaciones Productor:</strong> {{ sale.respuesta_productor }}</p>
+                            
+                            <div class="supply-status-picker" style="margin-top: 12px; display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: #2c3e50; flex-wrap: wrap;">
+                              <strong>Estado de Suministro:</strong>
+                              <select [value]="sale.estado_suministro" (change)="changeSupplyStatus(sale.order_id, $any($event.target).value)" style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border); font-family: inherit; font-size: 0.9rem; background: white; color: #2c3e50; outline: none; cursor: pointer;">
+                                <option value="PENDIENTE">Pendiente</option>
+                                <option value="ACEPTADO">Aceptado (Confirmar suministro y descontar stock)</option>
+                                <option value="EN_PREPARACION">En preparación</option>
+                                <option value="EN_REPARTO">En reparto</option>
+                                <option value="ENTREGADO">Entregado</option>
+                                <option value="CANCELADO">Cancelado</option>
+                              </select>
+                              <span style="font-size: 0.82rem; color: #7f8c8d; font-style: italic;">
+                                (El estado actual es: {{ sale.estado_suministro }})
+                              </span>
+                            </div>
+                          </div>
                         </div>
                         <table class="order-items-table">
                           <thead>
@@ -227,8 +407,9 @@
                     <div class="order-header" (click)="toggleExpandedItem(order.id)" style="cursor: pointer;">
                       <div>
                         <strong>Pedido #{{ order.id }}</strong>
-                        <span class="order-date">{{ order.created_at | date:'dd/MM/yyyy HH:mm' }}</span>
-                        <span class="order-delivery-type">{{ order.delivery_type === 'ADDRESS' ? 'A Domicilio' : 'Punto de Recogida' }}</span>
+                        <span *ngIf="order.tipo_pedido === 'PEDIDO_PLANIFICADO' || order.tipo_pedido === 'PLANIFICADO_RESTAURACION'" class="badge-status status-verified" style="margin-left: 8px; font-size: 0.75rem; padding: 2px 6px;">Planificación</span>
+                        <a *ngIf="order.tipo_pedido === 'PEDIDO_PLANIFICADO' || order.tipo_pedido === 'PLANIFICADO_RESTAURACION'" [routerLink]="['/pedido-planificado', order.id]" style="margin-left: 10px; color: var(--primary-green); font-weight: bold; text-decoration: underline;" (click)="$event.stopPropagation()">Ver Trazabilidad y Detalle</a>
+                        <span class="order-date" style="margin-left: 10px;">{{ order.created_at | date:'dd/MM/yyyy' }}</span>
                       </div>
                       <div>
                         <span class="status-badge" [class]="'status-' + order.status.toLowerCase()">
@@ -243,6 +424,12 @@
                       <div class="order-body">
                         <div class="order-customer-info">
                           <p><strong>Dirección de envío:</strong> {{ order.delivery_address }}</p>
+                          <div *ngIf="order.tipo_pedido === 'PEDIDO_PLANIFICADO' || order.tipo_pedido === 'PLANIFICADO_RESTAURACION'" style="margin-top: 10px; padding: 10px; background: #f4faf4; border-radius: 6px; border-left: 3px solid var(--primary-green); font-size: 0.9em;">
+                            <p style="margin: 2px 0;"><strong>Centro de Restauración:</strong> {{ order.centro_nombre }}</p>
+                            <p style="margin: 2px 0;"><strong>Fecha de Entrega Planificada:</strong> {{ order.fecha_entrega_deseada | date:'dd/MM/yyyy' }}</p>
+                            <p style="margin: 2px 0;"><strong>Estado del Suministro:</strong> <strong style="color: var(--dark-green);">{{ order.estado_suministro }}</strong></p>
+                            <p style="margin: 2px 0;"><strong>Observaciones:</strong> {{ order.observaciones || 'Ninguna' }}</p>
+                          </div>
                         </div>
                         <table class="order-items-table">
                           <thead>
@@ -540,7 +727,7 @@
           <!-- Datos de cuenta -->
           <div class="settings-card slide-down">
             <div class="settings-card-header">
-              <h5>👤 Datos de cuenta</h5>
+              <h5>Datos de cuenta</h5>
               <p>Actualiza tu nombre y email.</p>
             </div>
             <form class="settings-form" [formGroup]="accountForm" (ngSubmit)="saveAccountData()">
@@ -569,7 +756,7 @@
           <!-- Cambiar contraseña -->
           <div class="settings-card slide-down">
             <div class="settings-card-header">
-              <h5>🔒 Cambiar contraseña</h5>
+              <h5>Cambiar contraseña</h5>
               <p>Introduce tu nueva contraseña (mínimo 6 caracteres).</p>
             </div>
 
@@ -603,7 +790,7 @@
           <!-- Preferencias de accesibilidad -->
           <div class="settings-card slide-down">
             <div class="settings-card-header">
-              <h5>🎨 Preferencias y accesibilidad</h5>
+              <h5>Preferencias y accesibilidad</h5>
               <p>Los cambios se guardan automáticamente y persisten en tu cuenta.</p>
               @if (preferenceSaved) {
                 <span class="saved-indicator fade-in">✓ Guardado</span>

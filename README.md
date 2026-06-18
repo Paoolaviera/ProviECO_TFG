@@ -1,7 +1,7 @@
-﻿# Eco Market
+# ProviECO
 
 <p align="center">
-   <img src="frontend/src/assets/images/logo.jpg" alt="Logo EcoMarket" width="500">
+   <img src="frontend/src/assets/provieco-logo.png" alt="Logo ProviECO" width="500">
 </p>
 
 ## Integrantes del Grupo
@@ -12,12 +12,12 @@
 * Paola Viera Suárez
 
 ## Descripción del Proyecto
-EcoMarket surge como una respuesta tecnológica a la creciente demanda de un consumo responsable.
+ProviECO surge como una respuesta tecnológica orientada a la restauración colectiva y suministro de productos de proximidad.
 
 ## Tecnologías Utilizadas
 * **Frontend:** Angular v17+ (TypeScript, CSS).
 * **Backend:** Django con Django Rest Framework.
-* **Base de Datos:** PostgreSQL.
+* **Base de Datos:** SQLite (desarrollo) / PostgreSQL.
 * **IA:** Integración con OpenAI / Gemini.
 
 ## Guía de Ejecución

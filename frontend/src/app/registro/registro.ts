@@ -29,10 +29,47 @@ export class RegistroComponent {
     password: ['', [Validators.required, Validators.minLength(6)]],
     passwordConfirm: ['', Validators.required],
     provincia: ['', Validators.required],
-    terms: [false, Validators.requiredTrue]
+    terms: [false, Validators.requiredTrue],
+    rol: ['CLIENTE', Validators.required],
+    telefono: [''],
+    direccion: [''],
+    nombre_centro: [''],
+    tipo_centro: [''],
+    persona_responsable: [''],
+    observaciones_centro: ['']
   });
 
-  constructor(private authService: AuthService, private router: Router) {}
+  selectedFile: File | null = null;
+
+  constructor(private authService: AuthService, private router: Router) {
+    this.registerForm.get('rol')?.valueChanges.subscribe(() => {
+      this.onRolChange();
+    });
+  }
+
+  onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      this.selectedFile = file;
+    }
+  }
+
+  onRolChange() {
+    const rol = this.registerForm.get('rol')?.value;
+    const fieldsToValidate = ['nombre_centro', 'tipo_centro', 'persona_responsable', 'telefono', 'direccion'];
+    
+    if (rol === 'RESTAURACION') {
+      fieldsToValidate.forEach(field => {
+        this.registerForm.get(field)?.setValidators([Validators.required]);
+        this.registerForm.get(field)?.updateValueAndValidity();
+      });
+    } else {
+      fieldsToValidate.forEach(field => {
+        this.registerForm.get(field)?.clearValidators();
+        this.registerForm.get(field)?.updateValueAndValidity();
+      });
+    }
+  }
 
   togglePassword(): void {
     this.passwordVisible = !this.passwordVisible;
@@ -65,17 +102,37 @@ export class RegistroComponent {
     this.submitting = true;
     this.errorMessage = '';
 
-    const userData = {
-      ...this.registerForm.value,
-      rol: 'CLIENTE'
-    };
+    const emailVal = this.registerForm.value.email;
+    const passVal = this.registerForm.value.password;
 
-    this.authService.register(userData).subscribe({
+    let payload: any;
+    if (this.registerForm.get('rol')?.value === 'RESTAURACION') {
+      const formData = new FormData();
+      Object.keys(this.registerForm.value).forEach(key => {
+        const val = (this.registerForm.value as any)[key];
+        if (val !== null && val !== undefined) {
+          formData.append(key, val);
+        }
+      });
+      if (this.selectedFile) {
+        formData.append('documento_centro', this.selectedFile);
+      }
+      payload = formData;
+    } else {
+      payload = { ...this.registerForm.value };
+    }
+
+    this.authService.register(payload).subscribe({
       next: () => {
         // Automatically login after register
-        this.authService.login({ email: userData.email, password: userData.password }).subscribe({
+        this.authService.login({ email: emailVal, password: passVal }).subscribe({
           next: () => {
-            this.router.navigate(['/catalogo']);
+            const userRol = this.authService.currentUser?.rol;
+            if (userRol === 'RESTAURACION') {
+              this.router.navigate(['/restauracion']);
+            } else {
+              this.router.navigate(['/catalogo']);
+            }
           },
           error: () => {
             this.router.navigate(['/login']);

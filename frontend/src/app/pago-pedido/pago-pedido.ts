@@ -57,11 +57,12 @@ export class PagoPedidoComponent {
       .subscribe({
         next: () => {
           this.loading = false;
-          this.successMessage = 'Compra realizada correctamente.';
+          this.successMessage = 'Compra realizada con éxito. Gracias por confiar en ProviECO.';
+          this.errorMessage = '';
           this.cartService.clearCartLocal();
 
           setTimeout(() => {
-            this.router.navigate(['/catalogo']);
+            this.router.navigate(['/catalogo'], { queryParams: { success: 'compra' } });
           }, 2000);
         },
         error: (error) => {
