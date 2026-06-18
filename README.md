@@ -4,11 +4,7 @@
    <img src="frontend/src/assets/provieco-logo.png" alt="Logo ProviECO" width="500">
 </p>
 
-## Integrantes del Grupo
-* Alejandro David Fariña Afonso
-* Daniel Peña Méndez
-* Jorge Suárez Báez
-* Nauzet Martel Rodríguez
+## Autora
 * Paola Viera Suárez
 
 ## Descripción del Proyecto
