@@ -215,9 +215,7 @@ ProviECO_TFG/
 │   ├── package.json
 │   └── angular.json
 │
-├── PRUEBAS_TFG.md
 ├── REVISION_CUMPLIMIENTO_TFT01.md
-├── TFG_CAMBIOS_REALIZADOS.md
 ├── USUARIOS_Y_DATOS_PRUEBA.md
 ├── README.md
 ├── .gitignore
