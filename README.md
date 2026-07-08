@@ -399,28 +399,6 @@ La aplicación incorpora distintas validaciones para garantizar un funcionamient
 * Visibilidad pública solo de productos validados.
 * Separación de permisos por rol de usuario.
 
----
-
-## Cambios respecto a la propuesta inicial
-
-Durante el desarrollo se realizaron varios cambios para mejorar la viabilidad y calidad del proyecto:
-
-* Cambio del nombre del proyecto de EcoMarket a ProviECO.
-* Evolución del enfoque agrícola hacia un enfoque agroalimentario.
-* Sustitución de Ionic/Firebase por una arquitectura Angular + Django.
-* Incorporación del rol de restauración colectiva.
-* Validación documental para centros.
-* Validación de certificados ecológicos.
-* Incorporación de EcoBoxes.
-* Incorporación de pedidos planificados.
-* Mejora de la trazabilidad.
-* Adaptación PWA para uso móvil.
-
-Estos cambios se encuentran explicados con más detalle en el archivo:
-
-```txt
-REVISION_CUMPLIMIENTO_TFT01.md
-```
 
 ---
 
