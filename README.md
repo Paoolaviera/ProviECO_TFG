@@ -358,12 +358,10 @@ http://localhost:4200/
 
 ## Documentación incluida
 
-El repositorio incluye varios documentos de apoyo para la revisión y defensa del TFG:
+El repositorio incluye documentación básica de apoyo para la revisión del proyecto:
 
-* `PRUEBAS_TFG.md`: guion de pruebas y demostración práctica.
-* `REVISION_CUMPLIMIENTO_TFT01.md`: revisión de cumplimiento respecto a la propuesta inicial.
-* `TFG_CAMBIOS_REALIZADOS.md`: resumen de cambios realizados durante el desarrollo.
-* `USUARIOS_Y_DATOS_PRUEBA.md`: usuarios y datos de prueba para la demostración.
+* `REVISION_CUMPLIMIENTO_TFT01.md`: revisión del cumplimiento respecto a la propuesta inicial.
+* `USUARIOS_Y_DATOS_PRUEBA.md`: usuarios y datos de prueba para poder revisar la aplicación.
 
 ---
 
@@ -418,10 +416,9 @@ Durante el desarrollo se realizaron varios cambios para mejorar la viabilidad y 
 * Mejora de la trazabilidad.
 * Adaptación PWA para uso móvil.
 
-Estos cambios se encuentran explicados con más detalle en:
+Estos cambios se encuentran explicados con más detalle en el archivo:
 
 ```txt
-TFG_CAMBIOS_REALIZADOS.md
 REVISION_CUMPLIMIENTO_TFT01.md
 ```
 
@@ -439,8 +436,8 @@ Incluye:
 * Frontend con pantallas principales.
 * Gestión de usuarios por roles.
 * Validaciones administrativas.
-* Documentación de pruebas.
-* Datos de demostración.
+* Documentación básica de revisión.
+* Datos de prueba para la demostración.
 
 ---
 
