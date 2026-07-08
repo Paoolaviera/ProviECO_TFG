@@ -428,7 +428,6 @@ Como líneas de mejora futura se plantean:
 * Notificaciones automáticas por correo.
 * Panel estadístico avanzado.
 * Sistema de recomendaciones de productos.
-* Mejoras en la trazabilidad mediante códigos QR.
 * Optimización de la experiencia móvil.
 * Integración con mapas para visualizar productores por zona.
 
