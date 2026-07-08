@@ -8,9 +8,9 @@
 
 **Paola Viera Suárez**
 
-Trabajo de Fin de Grado
-Ingeniería Informática
-Escuela de Ingeniería Informática
+Trabajo de Fin de Grado  
+Ingeniería Informática  
+Escuela de Ingeniería Informática  
 Universidad de Las Palmas de Gran Canaria
 
 ---
