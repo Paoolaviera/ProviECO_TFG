@@ -92,7 +92,7 @@
         [class.active]="activeTab === 'previsiones'" 
         (click)="activeTab = 'previsiones'"
         style="background: none; border: none; padding: 12px 20px; font-size: 1rem; font-weight: 700; cursor: pointer; color: #7f8c8d; border-bottom: 3px solid transparent; transition: all 0.2s; display: flex; align-items: center; gap: 8px;">
-        <i class="fa-solid fa-chart-line"></i> Previsiones de Suministro
+        <i class="fa-solid fa-chart-line"></i> Previsiones del Centro
       </button>
     </nav>
 
@@ -349,130 +349,163 @@
     <!-- ── TAB 3: PREVISIONES DE SUMINISTRO ── -->
     <div *ngIf="activeTab === 'previsiones'" class="previsiones-workspace" style="display: flex; flex-direction: column; gap: 30px;">
       
+      <!-- Section Title and Subtitle -->
+      <div style="margin-bottom: 5px;">
+        <h2 style="margin: 0; font-size: 1.6rem; font-weight: 800; color: var(--dark-grey);">Planificación futura del {{ authService.currentUser?.nombre_centro || 'CEIP San Lorenzo' }}</h2>
+        <p style="margin: 5px 0 0 0; color: #7f8c8d; font-size: 0.95rem;">Resumen de los productos reservados por el centro a partir de sus EcoBoxes activas y pedidos planificados.</p>
+      </div>
+
       <!-- Stats Summary -->
-      <div class="stats-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px;">
+      <div class="stats-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+        <!-- Productos reservados Card -->
         <article class="stat-card" style="background: white; border: 1px solid var(--border); padding: 20px; border-radius: 12px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 15px;">
-          <div style="background: var(--light-green); color: var(--dark-green); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+          <div style="background: rgba(52, 152, 219, 0.1); color: #3498db; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+            <i class="fa-solid fa-basket-shopping"></i>
+          </div>
+          <div>
+            <span style="font-size: 13px; color: #7f8c8d; display: block;">Productos reservados</span>
+            <strong style="font-size: 1.4rem; color: var(--dark-grey);">{{ productosReservadosCount }}</strong>
+          </div>
+        </article>
+
+        <!-- EcoBoxes activas Card -->
+        <article class="stat-card" style="background: white; border: 1px solid var(--border); padding: 20px; border-radius: 12px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 15px;">
+          <div style="background: rgba(46, 204, 113, 0.1); color: #2ecc71; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
             <i class="fa-solid fa-boxes-packing"></i>
           </div>
           <div>
-            <span style="font-size: 13px; color: #7f8c8d; display: block;">Plantillas de Suministro</span>
-            <strong style="font-size: 1.6rem; color: var(--dark-grey);">{{ ecoBoxes.length }} EcoBoxes</strong>
+            <span style="font-size: 13px; color: #7f8c8d; display: block;">EcoBoxes activas</span>
+            <strong style="font-size: 1.4rem; color: var(--dark-grey);">{{ ecoBoxes.length || 1 }}</strong>
           </div>
         </article>
 
+        <!-- Próximas entregas Card -->
         <article class="stat-card" style="background: white; border: 1px solid var(--border); padding: 20px; border-radius: 12px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 15px;">
-          <div style="background: rgba(52, 152, 219, 0.1); color: #3498db; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
-            <i class="fa-solid fa-users"></i>
+          <div style="background: rgba(241, 196, 15, 0.1); color: #f1c40f; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+            <i class="fa-solid fa-calendar-days"></i>
           </div>
           <div>
-            <span style="font-size: 13px; color: #7f8c8d; display: block;">Comensales Abastecidos</span>
-            <strong style="font-size: 1.6rem; color: var(--dark-grey);">CEIP San Lorenzo</strong>
+            <span style="font-size: 13px; color: #7f8c8d; display: block;">Próximas entregas</span>
+            <strong style="font-size: 1.4rem; color: var(--dark-grey);">{{ proximasEntregasCount }}</strong>
           </div>
         </article>
 
+        <!-- Coste estimado Card -->
         <article class="stat-card" style="background: white; border: 1px solid var(--border); padding: 20px; border-radius: 12px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 15px;">
           <div style="background: rgba(155, 89, 182, 0.1); color: #9b59b6; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
-            <i class="fa-solid fa-clock"></i>
+            <i class="fa-solid fa-coins"></i>
           </div>
           <div>
-            <span style="font-size: 13px; color: #7f8c8d; display: block;">Pedidos Planificados</span>
-            <strong style="font-size: 1.6rem; color: var(--dark-grey);">{{ plannedOrders.length }} Registrados</strong>
+            <span style="font-size: 13px; color: #7f8c8d; display: block;">Coste estimado</span>
+            <strong style="font-size: 1.4rem; color: var(--dark-grey);">{{ formatPrice(totalCosteEstimado) }} €</strong>
           </div>
         </article>
       </div>
 
-      <!-- Aggregated Needs -->
+      <!-- Productos Planificados Table -->
       <section class="aggregated-needs-section" style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 25px; box-shadow: var(--shadow);">
-        <h3 style="margin: 0 0 10px 0; font-size: 1.4rem; font-weight: 800;">Necesidades de Producción Agregadas</h3>
-        <p style="margin: 0 0 20px 0; color: #7f8c8d; font-size: 0.95rem;">Cálculo estimado del total de alimentos necesarios para cubrir los ciclos de suministro definidos en sus plantillas EcoBox activas.</p>
+        <h3 style="margin: 0 0 10px 0; font-size: 1.4rem; font-weight: 800;">Pedidos y entregas planificadas</h3>
+        <p style="margin: 0 0 20px 0; color: #7f8c8d; font-size: 0.95rem;">Listado de pedidos futuros generados a partir de EcoBoxes o reservas planificadas.</p>
 
-        <div *ngIf="aggregatedNeeds.length === 0" class="empty-state" style="padding: 30px;">
-          <p>No hay necesidades calculadas. Añada productos a sus plantillas EcoBox.</p>
+        <div *ngIf="pedidosYEntregasPlanificadas.length === 0" class="empty-state" style="padding: 30px;">
+          <p>No tiene pedidos ni entregas planificadas en su agenda futura.</p>
         </div>
 
-        <div *ngIf="aggregatedNeeds.length > 0" class="table-responsive" style="overflow-x: auto;">
+        <div *ngIf="pedidosYEntregasPlanificadas.length > 0" class="table-responsive" style="overflow-x: auto;">
           <table class="orders-table" style="width: 100%; border-collapse: collapse; text-align: left;">
             <thead>
               <tr style="background: #f8f9fa;">
-                <th style="padding: 12px 15px; border-bottom: 2px solid var(--border); font-weight: 700;">Producto</th>
-                <th style="padding: 12px 15px; border-bottom: 2px solid var(--border); font-weight: 700;">Categoría</th>
-                <th style="padding: 12px 15px; border-bottom: 2px solid var(--border); font-weight: 700; text-align: right;">Cantidad Total</th>
-                <th style="padding: 12px 15px; border-bottom: 2px solid var(--border); font-weight: 700; text-align: right;">Precio Promedio</th>
-                <th style="padding: 12px 15px; border-bottom: 2px solid var(--border); font-weight: 700; text-align: right;">Coste Total Estimado</th>
+                <th style="padding: 12px 15px; border-bottom: 2px solid var(--border); font-weight: 700;">Pedido</th>
+                <th style="padding: 12px 15px; border-bottom: 2px solid var(--border); font-weight: 700;">Origen</th>
+                <th style="padding: 12px 15px; border-bottom: 2px solid var(--border); font-weight: 700;">Productos incluidos</th>
+                <th style="padding: 12px 15px; border-bottom: 2px solid var(--border); font-weight: 700; text-align: center;">Fecha prevista</th>
+                <th style="padding: 12px 15px; border-bottom: 2px solid var(--border); font-weight: 700; text-align: center;">Estado</th>
+                <th style="padding: 12px 15px; border-bottom: 2px solid var(--border); font-weight: 700; text-align: right;">Coste estimado</th>
+                <th style="padding: 12px 15px; border-bottom: 2px solid var(--border); font-weight: 700; text-align: center;">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let entry of aggregatedNeeds">
-                <td style="padding: 15px; border-bottom: 1px solid #f2f2f2; font-weight: 600;">{{ entry.product.name }}</td>
-                <td style="padding: 15px; border-bottom: 1px solid #f2f2f2; color: #7f8c8d;">{{ entry.product.categoria || 'Otros' }}</td>
-                <td style="padding: 15px; border-bottom: 1px solid #f2f2f2; text-align: right; font-weight: 700; color: var(--dark-grey);">
-                  {{ entry.totalQuantity }} {{ entry.product.unit || 'uds' }}
+              <tr *ngFor="let entry of pedidosYEntregasPlanificadas">
+                <td style="padding: 15px; border-bottom: 1px solid #f2f2f2; font-weight: 600;">{{ entry.pedido }}</td>
+                <td style="padding: 15px; border-bottom: 1px solid #f2f2f2; color: #7f8c8d;">{{ entry.origen }}</td>
+                <td style="padding: 15px; border-bottom: 1px solid #f2f2f2;">
+                  <ul style="list-style-type: none; padding-left: 0; margin: 0; font-size: 13px; color: #555;">
+                    <li *ngFor="let p of entry.productos" style="margin-bottom: 4px;">
+                      • {{ p.nombre }}: <strong>{{ p.cantidad }}</strong>
+                    </li>
+                  </ul>
                 </td>
-                <td style="padding: 15px; border-bottom: 1px solid #f2f2f2; text-align: right; color: #7f8c8d;">
-                  {{ formatPrice(entry.product.price) }} €/{{ entry.product.unit || 'uds' }}
+                <td style="padding: 15px; border-bottom: 1px solid #f2f2f2; text-align: center; color: #555;">
+                  {{ entry.fechaPrevista }}
+                </td>
+                <td style="padding: 15px; border-bottom: 1px solid #f2f2f2; text-align: center;">
+                  <span [class]="'badge-status ' + getStatusClass(entry.estado)" style="padding: 4px 10px; font-size: 12px;">
+                    {{ getStatusLabel(entry.estado) }}
+                  </span>
                 </td>
                 <td style="padding: 15px; border-bottom: 1px solid #f2f2f2; text-align: right; font-weight: 800; color: var(--dark-green);">
-                  {{ formatPrice(entry.totalCost) }} €
+                  {{ formatPrice(entry.coste) }} €
+                </td>
+                <td style="padding: 15px; border-bottom: 1px solid #f2f2f2; text-align: center;">
+                  <button 
+                    (click)="descargarPDF(entry)" 
+                    class="btn btn-primary" 
+                    style="padding: 6px 12px; font-size: 12px; font-weight: 700; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; background-color: var(--primary-green); border-color: var(--primary-green);">
+                    <i class="fa-solid fa-file-pdf"></i> Descargar resumen PDF
+                  </button>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
+
+        <!-- Information Notice Box -->
+        <div style="background: rgba(52, 152, 219, 0.08); border-left: 5px solid #3498db; padding: 20px; border-radius: 8px; margin-top: 20px;">
+          <p style="margin: 0; font-size: 14px; color: var(--dark-grey); line-height: 1.5;">
+            Las EcoBoxes actúan como plantillas recurrentes. Cuando se genera un pedido desde una EcoBox, esta vista muestra únicamente el pedido resultante para evitar duplicados.
+          </p>
+        </div>
       </section>
 
       <!-- Calendar of Upcoming Deliveries -->
       <section class="upcoming-deliveries-section" style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 25px; box-shadow: var(--shadow);">
-        <h3 style="margin: 0 0 10px 0; font-size: 1.4rem; font-weight: 800;">Calendario Próximo de Recepciones (Trazabilidad)</h3>
-        <p style="margin: 0 0 20px 0; color: #7f8c8d; font-size: 0.95rem;">Entregas planificadas aprobadas o en proceso programadas para las próximas fechas.</p>
+        <h3 style="margin: 0 0 10px 0; font-size: 1.4rem; font-weight: 800;">Próximas entregas del {{ authService.currentUser?.nombre_centro || 'CEIP San Lorenzo' }}</h3>
+        <p style="margin: 0 0 20px 0; color: #7f8c8d; font-size: 0.95rem;">Estas entregas corresponden a los pedidos planificados generados por el centro a partir de EcoBoxes o reservas futuras.</p>
 
-        <div *ngIf="upcomingDeliveries.length === 0" class="empty-state" style="padding: 30px;">
+
+        <div *ngIf="proximasEntregasReales.length === 0" class="empty-state" style="padding: 30px;">
           <p>No tiene entregas programadas en los próximos días.</p>
         </div>
 
-        <div *ngIf="upcomingDeliveries.length > 0" class="deliveries-timeline" style="display: flex; flex-direction: column; gap: 15px;">
+        <div *ngIf="proximasEntregasReales.length > 0" class="deliveries-timeline" style="display: flex; flex-direction: column; gap: 15px;">
           <article 
-            *ngFor="let del of upcomingDeliveries" 
+            *ngFor="let del of proximasEntregasReales" 
             style="border: 1px solid var(--border); border-left: 6px solid #3498db; border-radius: 8px; padding: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
             <div>
               <span style="font-size: 12px; color: #e67e22; font-weight: 700; text-transform: uppercase;">
-                Fecha Estimada: {{ del.fecha_entrega_deseada | date:'dd/MM/yyyy' }}
+                Fecha Estimada: {{ del.fecha | date:'dd/MM/yyyy' }}
               </span>
-              <h4 style="margin: 5px 0 8px 0; font-size: 1rem; font-weight: 700; color: var(--dark-grey);"><a [routerLink]="['/pedido-planificado', del.id]" style="color: var(--dark-grey); text-decoration: underline;">Pedido Planificado #{{ del.id }}</a></h4>
+              <h4 style="margin: 5px 0 8px 0; font-size: 1.15rem; font-weight: 700; color: var(--dark-grey);">
+                <span *ngIf="del.id"><a [routerLink]="['/pedido-planificado', del.id]" style="color: var(--dark-grey); text-decoration: underline;">{{ del.pedido }}</a></span>
+                <span *ngIf="!del.id">{{ del.pedido }}</span>
+              </h4>
+              <p style="margin: 0 0 10px 0; font-size: 13px; color: #7f8c8d;">
+                Origen: <strong>{{ del.origen }}</strong>
+              </p>
               
-              <div style="font-size: 13px; margin: 5px 0 10px 0; color: #555;" *ngIf="del.frecuencia">
-                <strong>Frecuencia:</strong> 
-                <span style="color: var(--primary, #2ecc71); font-weight: 600;">
-                  {{ del.frecuencia.toUpperCase() === 'UNICO' ? 'Entrega única' : 
-                     (del.frecuencia.toUpperCase() === 'SEMANAL' ? 'Semanal' : 
-                     (del.frecuencia.toUpperCase() === 'QUINCENAL' ? 'Quincenal, cada 15 días' : 
-                     (del.frecuencia.toUpperCase() === 'MENSUAL' ? 'Mensual' : del.frecuencia))) }}
-                </span>
-                
-                <div *ngIf="del.frecuencia.toUpperCase() !== 'UNICO'" style="margin-top: 4px; font-size: 12px; color: #7f8c8d;">
-                  <strong>Próximas entregas previstas:</strong>
-                  <span *ngFor="let dateStr of getFutureDates(del.fecha_entrega_deseada, del.frecuencia); let last = last" style="margin-left: 5px; font-weight: 600;">
-                    {{ dateStr | date:'dd/MM/yyyy' }}{{ !last ? ',' : '' }}
-                  </span>
-                </div>
-              </div>
-
               <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #7f8c8d; list-style-type: none;">
                 <li *ngFor="let item of del.items" style="margin-bottom: 6px;">
-                  • {{ item.product_name }} (x{{ item.quantity }}) —
-                  <span [class]="'badge-status ' + getItemStatusClass(item.estado_productor)" style="padding: 2px 6px; font-size: 10px; display: inline-flex;">
+                  • {{ item.product_name }} ({{ item.quantity }})
+                  <span *ngIf="item.estado_productor" [class]="'badge-status ' + getItemStatusClass(item.estado_productor)" style="padding: 2px 6px; font-size: 10px; display: inline-flex; margin-left: 8px;">
                     {{ getItemStatusLabel(item.estado_productor) }}
-                  </span>
-                  <span *ngIf="item.observaciones_productor" style="font-size: 11px; color: #e74c3c; font-style: italic; display: block; margin-left: 10px; margin-top: 2px;">
-                    Motivo rechazo: "{{ item.observaciones_productor }}"
                   </span>
                 </li>
               </ul>
             </div>
             
             <div style="text-align: right;">
-              <span [class]="'badge-status ' + getStatusClass(del.estado_suministro)" style="margin-bottom: 8px;">
-                {{ getStatusLabel(del.estado_suministro) }}
+              <span [class]="'badge-status ' + getStatusClass(del.estado)" style="margin-bottom: 8px;">
+                {{ getStatusLabel(del.estado) }}
               </span>
               <strong style="display: block; font-size: 1.1rem; color: var(--dark-grey);">{{ formatPrice(del.total) }} €</strong>
             </div>

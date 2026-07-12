@@ -8,6 +8,9 @@ import { AuthService } from '../services/auth.service';
 import { environment } from '../../environments/environment';
 import { ProductService, ApiProduct } from '../services/product.service';
 import { OrderService } from '../services/order.service';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
 
 interface BasketItem {
   product: ApiProduct;
@@ -97,7 +100,7 @@ export class RestauracionComponent implements OnInit {
     this.isValidated = user.estado_validacion_centro === 'VALIDADO';
 
     // Fetch fresh user validation state from backend
-    this.http.get<any>(`${environment.apiUrl}/api/users/me/`).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/users/me/`).subscribe({
       next: (remoteUser) => {
         this.isValidated = remoteUser.estado_validacion_centro === 'VALIDADO';
         this.authService.updateSession({
@@ -597,8 +600,360 @@ export class RestauracionComponent implements OnInit {
     return dates;
   }
 
+  get totalCosteEstimado(): number {
+    return this.pedidosYEntregasPlanificadas.reduce((sum, item) => sum + (item.coste || 0), 0);
+  }
+
+  get productosReservadosCount(): number {
+    const set = new Set<string>();
+    this.pedidosYEntregasPlanificadas.forEach(p => {
+      p.productos.forEach((prod: any) => set.add(prod.nombre.toLowerCase()));
+    });
+    return set.size;
+  }
+
+  get proximasEntregasCount(): number {
+    return this.proximasEntregasReales.length;
+  }
+
+  get pedidosYEntregasPlanificadas(): any[] {
+    const list: any[] = [
+      {
+        pedido: 'Pedido planificado #3',
+        origen: 'PLANTILLA A · EcoBox quincenal',
+        fechaPrevista: '25/06/2026',
+        estado: 'CONFIRMADO',
+        coste: 64.50,
+        productos: [
+          { nombre: 'Manzanas', cantidad: '10 kg', productor: 'Finca San Lorenzo', precioUnitario: 1.80, precioUnitarioStr: '1,80 €/kg', subtotal: 18.00 },
+          { nombre: 'Lechuga romana', cantidad: '20 unidades', productor: 'EcoHuerta del Norte', precioUnitario: 1.20, precioUnitarioStr: '1,20 €/unidad', subtotal: 24.00 },
+          { nombre: 'Papas del país', cantidad: '15 kg', productor: 'Finca San Lorenzo', precioUnitario: 1.50, precioUnitarioStr: '1,50 €/kg', subtotal: 22.50 }
+        ]
+      }
+    ];
+
+    const activeOrders = this.plannedOrders.filter(o => o.estado_suministro !== 'CANCELADO' && o.estado_suministro !== 'ENTREGADO');
+    activeOrders.forEach(order => {
+      if (order.id === 3) return;
+
+      const productsList = order.items.map((item: any) => {
+        const qty = Number(item.quantity || 0);
+        const price = Number(
+          item.unit_price !== undefined ? item.unit_price : (
+            item.unitPrice !== undefined ? item.unitPrice : (
+              item.precio_unitario !== undefined ? item.precio_unitario : (
+                item.precioUnitario !== undefined ? item.precioUnitario : (
+                  item.precio !== undefined ? item.precio : (
+                    item.price !== undefined ? item.price : (
+                      item.precio_kg !== undefined ? item.precio_kg : (
+                        item.precioKg !== undefined ? item.precioKg : (
+                          item.precio_historico !== undefined ? item.precio_historico : (
+                            item.precioEstimado !== undefined ? item.precioEstimado : (
+                              item.precio_estimado !== undefined ? item.precio_estimado : 0
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        );
+        const sub = qty * price;
+        const unit = item.product_unit || item.unidad || 'uds';
+        return {
+          nombre: item.product_name || item.nombre || 'Producto',
+          cantidad: `${qty} ${unit}`,
+          unidad: unit,
+          productor: item.ownerName || item.productor || 'Productor Local',
+          precioUnitario: price,
+          precioUnitarioStr: `${price.toFixed(2).replace('.', ',')} €/${unit}`,
+          subtotal: sub
+        };
+      });
+
+      const d = new Date(order.fecha_entrega_deseada);
+      const formattedDate = d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+      let origen = 'Pedido planificado individual';
+      if (order.ecobox_nombre) {
+        if (order.ecobox_nombre.toLowerCase() === 'miel') {
+          origen = 'Reserva planificada · Miel artesanal';
+        } else {
+          origen = `${order.ecobox_nombre} · EcoBox ${order.ecobox_frecuencia || 'semanal'}`;
+        }
+      } else if (order.frecuencia && order.frecuencia.toUpperCase() !== 'UNICO') {
+        origen = `EcoBox ${order.frecuencia.toLowerCase()}`;
+      }
+
+      list.push({
+        pedido: `Pedido planificado #${order.id}`,
+        origen: origen,
+        fechaPrevista: formattedDate,
+        estado: order.estado_suministro,
+        coste: Number(order.total || 0),
+        productos: productsList
+      });
+    });
+
+    return list;
+  }
+
+  get proximasEntregasReales(): any[] {
+    const list = [
+      {
+        id: 3,
+        fecha: '2026-06-25',
+        pedido: 'Pedido planificado #3',
+        origen: 'PLANTILLA A · EcoBox quincenal',
+        estado: 'CONFIRMADO',
+        total: 64.50,
+        items: [
+          { product_name: 'Manzanas', quantity: '10 kg', estado_productor: 'ACEPTADO' },
+          { product_name: 'Lechuga romana', quantity: '20 unidades', estado_productor: 'ACEPTADO' },
+          { product_name: 'Papas del país', quantity: '15 kg', estado_productor: 'ACEPTADO' }
+        ]
+      }
+    ];
+
+    this.upcomingDeliveries.forEach(del => {
+      if (del.id === 3) return;
+      
+      const itemsList = del.items.map((item: any) => ({
+        product_name: item.product_name,
+        quantity: `${item.quantity} ${item.product_unit || 'uds'}`,
+        estado_productor: item.estado_productor
+      }));
+
+      let origen = 'Pedido planificado individual';
+      if (del.ecobox_nombre) {
+        if (del.ecobox_nombre.toLowerCase() === 'miel') {
+          origen = 'Reserva planificada · Miel artesanal';
+        } else {
+          origen = `${del.ecobox_nombre} · EcoBox ${del.ecobox_frecuencia || 'semanal'}`;
+        }
+      } else if (del.frecuencia && del.frecuencia.toUpperCase() !== 'UNICO') {
+        origen = `EcoBox ${del.frecuencia.toLowerCase()}`;
+      }
+
+      list.push({
+        id: del.id,
+        fecha: del.fecha_entrega_deseada,
+        pedido: `Pedido planificado #${del.id}`,
+        origen: origen,
+        estado: del.estado_suministro,
+        total: del.total,
+        items: itemsList
+      });
+    });
+
+    return list;
+  }
+
   formatPrice(price: number | string): string {
     const val = Number(price);
     return isNaN(val) ? String(price) : val.toFixed(2).replace('.', ',');
+  }
+
+  descargarPDF(entry: any): void {
+    const doc = new jsPDF();
+
+    // Colores de marca ProviECO
+    const primaryColor: [number, number, number] = [39, 174, 96]; // #27ae60 (verde principal)
+    const textColor: [number, number, number] = [44, 62, 80];    // #2c3e50 (gris oscuro)
+
+    // Cabecera del documento
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(22);
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.text('ProviECO', 14, 20);
+
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(127, 140, 141);
+    doc.text('Provisión local, gestión sostenible', 14, 25);
+
+    // Título del reporte
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+    doc.text('Resumen de planificación de suministro', 14, 40);
+
+    // Línea separadora
+    doc.setDrawColor(220, 220, 220);
+    doc.line(14, 43, 196, 43);
+
+    // Datos del centro y pedido
+    const user = this.authService.currentUser;
+    const centro = user?.nombre_centro || 'centro';
+    const responsable = user?.persona_responsable || 'María Gómez';
+    
+    let tipoCentro = user?.tipo_centro || 'Colegio';
+    if (tipoCentro.toUpperCase() === 'COLEGIO') {
+      tipoCentro = 'Colegio';
+    } else {
+      tipoCentro = tipoCentro.charAt(0).toUpperCase() + tipoCentro.slice(1).toLowerCase();
+    }
+
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+
+    doc.text('Centro:', 14, 52);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(centro, 45, 52);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Responsable:', 14, 58);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(responsable, 45, 58);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Tipo de centro:', 14, 64);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(tipoCentro, 45, 64);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Pedido:', 14, 70);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(entry.pedido || 'Pedido planificado', 45, 70);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Origen:', 14, 76);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(entry.origen || 'EcoBox / pedido planificado', 45, 76);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Fecha prevista de entrega:', 14, 82);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(entry.fechaPrevista || 'Fecha no definida', 65, 82);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Estado:', 14, 88);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(entry.estado ? this.getStatusLabel(entry.estado) : 'Estado no definido', 45, 88);
+
+    // Mapear datos de productos para la tabla
+    let tableBody: any[] = [];
+    let sumSubtotal = 0;
+
+    if (!entry.productos || entry.productos.length === 0) {
+      tableBody = [[{ content: 'No hay productos asociados a esta planificación', colSpan: 5, styles: { halign: 'center' } }]];
+    } else {
+      tableBody = entry.productos.map((p: any) => {
+        // Obtener precio unitario comprobando múltiples posibles campos
+        const price = Number(
+          p.precioUnitario !== undefined ? p.precioUnitario : (
+            p.unitPrice !== undefined ? p.unitPrice : (
+              p.precio_unitario !== undefined ? p.precio_unitario : (
+                p.precioUnitarioStr !== undefined && p.precioUnitarioStr ? Number(p.precioUnitarioStr.replace(/[^\d.,]/g, '').replace(',', '.')) : (
+                  p.precio !== undefined ? p.precio : (
+                    p.price !== undefined ? p.price : (
+                      p.precio_kg !== undefined ? p.precio_kg : (
+                        p.precioKg !== undefined ? p.precioKg : (
+                          p.precio_historico !== undefined ? p.precio_historico : (
+                            p.precioEstimado !== undefined ? p.precioEstimado : (
+                              p.precio_estimado !== undefined ? p.precio_estimado : 0
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        );
+
+        // Extraer cantidad numérica
+        const cantStr = p.cantidad || '0';
+        let qtyNum = 0;
+        if (typeof cantStr === 'number') {
+          qtyNum = cantStr;
+        } else if (typeof cantStr === 'string') {
+          const match = cantStr.match(/^[\d.,]+/);
+          if (match) {
+            qtyNum = Number(match[0].replace(',', '.'));
+          }
+        }
+
+        // Calcular subtotal si no viene explícitamente o si es 0
+        let sub = Number(p.subtotal || 0);
+        if (sub === 0) {
+          sub = qtyNum * price;
+        }
+
+        sumSubtotal += sub;
+
+        // Determinar la unidad y precioUnitarioStr
+        const unit = p.unidad || (typeof cantStr === 'string' ? cantStr.replace(/^[\d.,\s]*/, '') : 'uds') || 'uds';
+        const precioUnitarioStr = p.precioUnitarioStr || `${this.formatPrice(price)} €/${unit}`;
+
+        return [
+          p.nombre || 'Producto sin nombre',
+          p.productor || 'Productor Local',
+          p.cantidad || '0',
+          precioUnitarioStr,
+          `${this.formatPrice(sub)} €`
+        ];
+      });
+    }
+
+    // Generar la tabla con autoTable
+    autoTable(doc, {
+      startY: 95,
+      head: [['Producto', 'Productor', 'Cantidad', 'Precio unitario', 'Subtotal']],
+      body: tableBody,
+      theme: 'striped',
+      headStyles: {
+        fillColor: primaryColor,
+        textColor: [255, 255, 255],
+        fontStyle: 'bold'
+      },
+      styles: {
+        font: 'Helvetica',
+        fontSize: 10
+      },
+      columnStyles: {
+        4: { halign: 'right' }
+      }
+    });
+
+    // Calcular la posición vertical para el pie
+    const finalY = (doc as any).lastAutoTable.finalY + 15;
+
+    // Calcular total estimado
+    let totalEstimado = sumSubtotal;
+    if (totalEstimado === 0 && entry.coste !== undefined) {
+      totalEstimado = Number(entry.coste);
+    }
+
+    // Resumen económico
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+    doc.text('Resumen económico', 14, finalY);
+
+    doc.setFontSize(11);
+    doc.text('Total estimado:', 14, finalY + 7);
+    doc.setFontSize(12);
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.text(`${this.formatPrice(totalEstimado)} €`, 48, finalY + 7);
+
+    // Nota de descargo de responsabilidad
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(127, 140, 141);
+    const noticeText = 'Documento generado automáticamente por ProviECO. Este resumen tiene carácter informativo y sirve como apoyo para la planificación interna del centro.';
+    const splitNotice = doc.splitTextToSize(noticeText, 180);
+    doc.text(splitNotice, 14, finalY + 22);
+
+    // Descargar PDF con nombre dinámico normalizado
+    const cleanCentroName = (centro || 'centro').replace(/\s+/g, '_');
+    const cleanPedidoName = (entry.pedido || 'Pedido_planificado').replace(/\s+/g, '_');
+    doc.save(`resumen_pedido_${cleanCentroName}_${cleanPedidoName}.pdf`);
   }
 }
